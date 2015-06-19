@@ -4,22 +4,22 @@ defmodule ShortMapsTest do
 
   test "uses the bindings from the current environment" do
     foo = 1
-    assert ~m(foo) == %{foo: 1}
+    assert ~m(foo)a == %{foo: 1}
   end
 
   test "can be used in regular matches" do
-    assert ~m(foo) = %{foo: "bar"}
+    assert ~m(foo)a = %{foo: "bar"}
     foo # this removes the "variable foo is unused" warning
   end
 
   test "when used in pattern matches, it binds variables in the scope" do
-    ~m(foo) = %{foo: "bar"}
+    ~m(foo)a = %{foo: "bar"}
     assert foo == "bar"
   end
 
   test "can be used in function heads for anonymoys functions" do
     fun = fn
-      ~m(foo) -> foo
+      ~m(foo)a -> foo
       _       -> :no_match
     end
 
@@ -29,7 +29,7 @@ defmodule ShortMapsTest do
 
   test "can be used in function heads for functions in modules" do
     defmodule FunctionHead do
-      def test(~m(foo)), do: foo
+      def test(~m(foo)a), do: foo
       def test(_),       do: :no_match
     end
 
@@ -54,7 +54,7 @@ defmodule ShortMapsTest do
   end
 
   test "no interpolation is supported" do
-    code = quote do: ~m(foo #{bar} baz)
+    code = quote do: ~m(foo #{bar} baz)a
     msg = "interpolation is not supported with the ~m sigil"
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
   end

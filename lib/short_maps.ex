@@ -1,4 +1,6 @@
 defmodule ShortMaps do
+  @default_modifier ?s
+
   @doc ~S"""
   Returns a map with the given keys bound to variables with the same name.
 
@@ -16,7 +18,7 @@ defmodule ShortMaps do
   these keys as the keys and with variables with the same name as values. Using
   this sigil, this code can be reduced to just this:
 
-      ~m(foo bar baz) = my_map
+      ~m(foo bar baz)a = my_map
       foo #=> "foo"
 
   `~m` can be used in regular pattern matches like the ones in the examples
@@ -25,7 +27,7 @@ defmodule ShortMaps do
       defmodule Test do
         import ShortMaps
 
-        def test(~m(foo)), do: foo
+        def test(~m(foo)a), do: foo
         def test(_),       do: :no_match
       end
 
@@ -35,8 +37,8 @@ defmodule ShortMaps do
   ## Modifiers
 
   The `~m` sigil supports both maps with atom keys as well as string keys. Atom
-  keys can be specified using the `a` modifier (which is the default), while
-  string keys can be specified with the `s` modifier.
+  keys can be specified using the `a` modifier, while string keys can be
+  specified with the `s` modifier (which is the default).
 
       ~m(my_key)s = %{"my_key" => "my value"}
       my_key #=> "my value"
@@ -81,7 +83,7 @@ defmodule ShortMaps do
   end
 
   defp modifier([]),
-    do: ?a
+    do: @default_modifier
   defp modifier([mod]) when mod in 'as',
     do: mod
   defp modifier(_),
