@@ -65,9 +65,10 @@ defmodule ShortMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    keys      = String.split(string)
+    names     = String.split(string)
+    keys      = Enum.map(names, &strip_pin/1)
     atom_keys = Enum.map(keys, &String.to_atom/1)
-    variables = Enum.map(atom_keys, &Macro.var(&1, nil))
+    variables = Enum.map(names, &handle_var/1)
 
     pairs =
       case modifier(modifiers) do
@@ -80,6 +81,18 @@ defmodule ShortMaps do
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~m sigil"
+  end
+
+  defp strip_pin("^" <> name),
+    do: name
+  defp strip_pin(name),
+    do: name
+
+  defp handle_var("^" <> name) do
+    {:^, [], [Macro.var(String.to_atom(name), nil)]}
+  end
+  defp handle_var(name) do
+    String.to_atom(name) |> Macro.var(nil)
   end
 
   defp modifier([]),

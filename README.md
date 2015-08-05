@@ -58,6 +58,20 @@ name = "Meg"
 ~m(name)a #=> %{name: "Meg"}
 ```
 
+There is also support for pinning variables, if you want to do matching
+vs. their previous value:
+
+```elixir
+iex(1)> import ShortMaps
+nil
+iex(2)> name = "Meg"
+"Meg"
+iex(3)> ~m(^name)a = %{name: "Meg"}
+%{name: "Meg"}
+iex(4)> ~m(^name)a = %{name: "Megan"}
+** (MatchError) no match of right hand side value: %{name: "Megan"}
+```
+
 You can see more examples and read some docs in the docs for the `sigil_m`
 macro.
 
