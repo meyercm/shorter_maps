@@ -36,7 +36,11 @@ This library is an attempt to implement this so that you can try it out.
 
 ## Examples
 
+Note that you always have to `import ShortMaps` for the sigil to work.
+
 ```elixir
+import ShortMaps
+
 my_map = %{foo: 1, bar: 2, baz: 3}
 
 ~m(foo bar baz)a = my_map
@@ -44,6 +48,8 @@ foo #=> 1
 ```
 
 ```elixir
+import ShortMaps
+
 name = "Meg"
 
 # String keys by default (or with the 's' modifier)
@@ -51,6 +57,9 @@ name = "Meg"
 # Atom keys with the 'a' modifier
 ~m(name)a #=> %{name: "Meg"}
 ```
+
+You can see more examples and read some docs in the docs for the `sigil_m`
+macro.
 
 ## LICENSE
 
