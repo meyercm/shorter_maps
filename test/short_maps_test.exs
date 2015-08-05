@@ -17,6 +17,19 @@ defmodule ShortMapsTest do
     assert foo == "bar"
   end
 
+  test "pin syntax in pattern matches will match on same value" do
+    foo = "bar"
+    assert ~m(^foo)a = %{foo: "bar"}
+  end
+
+  test "pin syntax in pattern matches will raise if no match" do
+    msg = "no match of right hand side value: %{foo: \"baaz\"}"
+    assert_raise MatchError, msg, fn ->
+      foo = "bar"
+      ~m(^foo)a = %{foo: "baaz"}
+    end
+  end
+
   test "can be used in function heads for anonymoys functions" do
     fun = fn
       ~m(foo)a -> foo
