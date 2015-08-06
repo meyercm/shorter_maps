@@ -81,10 +81,17 @@ defmodule ShortMapsTest do
     assert ~m(%Foo bar)a == %Foo{bar: 1}
   end
 
-  test "when using structs, ignores unrelated keys" do
-    bar = 1
-    baaz = 2
-    assert ~m(%Foo bar baaz)a == %Foo{bar: 1}
+  test "struct syntax can be used in regular matches" do
+    assert ~m(%Foo bar)a = %Foo{bar: "123"}
+    bar # this removes the "variable bar is unused" warning
+  end
+
+  test "when using structs, fails on non-existing keys" do
+    code = quote do: ~m(%Foo bar baaz)a = %Foo{bar: 1}
+    msg = ~r/unknown key :baaz for struct ShortMapsTest.Foo/
+    assert_raise CompileError, msg, fn ->
+      Code.eval_quoted(code, [], __ENV__)
+    end
   end
 
   test "when using structs, only accepts 'a' modifier" do

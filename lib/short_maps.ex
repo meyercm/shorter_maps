@@ -77,10 +77,10 @@ defmodule ShortMaps do
 
   defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s),
     do: raise(ArgumentError, "structs can only consist of atom keys")
-  defp do_sigil_m(_line, ["%" <> struct_name | words], ?a) do
+  defp do_sigil_m(line, ["%" <> struct_name | words], ?a) do
     struct = String.to_atom("Elixir." <> struct_name)
     pairs = make_pairs(words, ?a)
-    quote do: struct(__MODULE__.unquote(struct), unquote(pairs))
+    quote do: %__MODULE__.unquote(struct){unquote_splicing(pairs)}
   end
 
   defp do_sigil_m(line, words, modifier) do
