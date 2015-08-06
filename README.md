@@ -72,6 +72,27 @@ iex(4)> ~m(^name)a = %{name: "Megan"}
 ** (MatchError) no match of right hand side value: %{name: "Megan"}
 ```
 
+If you need to match on structs, the first word should be '%' followed by the
+name of the module:
+
+```elixir
+iex(1)> import ShortMaps
+nil
+iex(2)> defmodule Foo do
+...(2)>  defstruct bar: nil
+...(2)>end
+{:module, Foo,
+ <<...>>,
+ [bar: nil]}
+
+iex(3)> ~m(%Foo bar) = %Foo{bar: 5}
+%Foo{bar: 5}
+iex(4)> bar
+5
+iex(5)> ~m(%Foo ^bar)a = %Foo{bar: 12}
+** (MatchError) no match of right hand side value: %Foo{bar: 12}
+```
+
 You can see more examples and read some docs in the docs for the `sigil_m`
 macro.
 
