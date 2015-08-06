@@ -1,14 +1,18 @@
 defmodule ShortMaps do
   @default_modifier ?s
 
+  @first_letter_uppercase ~r/^\p{Lu}/u
+
   @doc ~S"""
   Returns a map with the given keys bound to variables with the same name.
 
   This macro sigil is used to reduce boilerplate when writing pattern matches on
-  maps that bind variables with the same name as the map keys. For example, this
-  is very common Elixir code:
+  maps that bind variables with the same name as the map keys. For example,
+  given a map that looks like this:
 
       my_map = %{foo: "foo", bar: "bar", baz: "baz"}
+
+  ..the following is very common Elixir code:
 
       %{foo: foo, bar: bar, baz: baz} = my_map
       foo #=> "foo"
@@ -33,6 +37,33 @@ defmodule ShortMaps do
 
       Test.test %{foo: "hello world"} #=> "hello world"
       Test.test %{bar: "hey there!"}  #=> :no_match
+
+  ## Pinning
+
+  Matching using the `~m` sigil has full support for the pin operator:
+
+      bar = "bar"
+      ~m(foo ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
+      foo #=> "foo"
+      bar #=> "bar"
+      ~m(foo ^bar) = %{foo: "FOO", bar: "bar"} #=> this is still ok
+      foo #=> "FOO"; since we didn't pin it, it's now bound to a new value
+      bar #=> "bar"
+      ~m(foo ^bar) = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
+
+  ## Structs
+
+  For using structs instead of plain maps, the first word must be prefixed with
+  '%':
+
+      defmodule Foo do
+        defstruct bar: nil
+      end
+
+      ~m(%Foo bar)a = %Foo{bar: 4711}
+      bar #=> 4711
+
+  _NOTE: Structs only support atom keys, so you must use the 'a' modifier._
 
   ## Modifiers
 
@@ -65,22 +96,35 @@ defmodule ShortMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    names     = String.split(string)
-    keys      = Enum.map(names, &strip_pin/1)
-    atom_keys = Enum.map(keys, &String.to_atom/1)
-    variables = Enum.map(names, &handle_var/1)
-
-    pairs =
-      case modifier(modifiers) do
-        ?a -> Enum.zip(atom_keys, variables)
-        ?s -> Enum.zip(keys, variables)
-      end
-
-    {:%{}, line, pairs}
+    do_sigil_m(line, String.split(string), modifier(modifiers))
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~m sigil"
+  end
+
+
+  defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s),
+    do: raise(ArgumentError, "structs can only consist of atom keys")
+  defp do_sigil_m(line, ["%" <> struct_name | words], ?a) do
+    struct = String.to_atom("Elixir." <> struct_name)
+    pairs = make_pairs(words, ?a)
+    quote do: %__MODULE__.unquote(struct){unquote_splicing(pairs)}
+  end
+
+  defp do_sigil_m(line, words, modifier) do
+    pairs = make_pairs(words, modifier)
+    {:%{}, line, pairs}
+  end
+
+  defp make_pairs(words, modifier) do
+    keys      = Enum.map(words, &strip_pin/1)
+    variables = Enum.map(words, &handle_var/1)
+
+    case modifier do
+      ?a -> keys |> Enum.map(&String.to_atom/1) |> Enum.zip(variables)
+      ?s -> keys |> Enum.zip(variables)
+    end
   end
 
   defp strip_pin("^" <> name),

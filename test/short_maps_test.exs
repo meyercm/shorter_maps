@@ -71,4 +71,35 @@ defmodule ShortMapsTest do
     msg = "interpolation is not supported with the ~m sigil"
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
   end
+
+  defmodule Foo do
+    defstruct bar: nil
+  end
+
+  test "supports structs" do
+    bar = 1
+    assert ~m(%Foo bar)a == %Foo{bar: 1}
+  end
+
+  test "struct syntax can be used in regular matches" do
+    assert ~m(%Foo bar)a = %Foo{bar: "123"}
+    bar # this removes the "variable bar is unused" warning
+  end
+
+  test "when using structs, fails on non-existing keys" do
+    code = quote do: ~m(%Foo bar baaz)a = %Foo{bar: 1}
+    msg = ~r/unknown key :baaz for struct ShortMapsTest.Foo/
+    assert_raise CompileError, msg, fn ->
+      Code.eval_quoted(code, [], __ENV__)
+    end
+  end
+
+  test "when using structs, only accepts 'a' modifier" do
+    code = quote do
+      bar = 5
+      ~m(%Foo bar)s
+    end
+    msg = "structs can only consist of atom keys"
+    assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
+  end
 end
