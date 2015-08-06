@@ -67,7 +67,7 @@ defmodule ShortMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, String.split(string), modifiers)
+    do_sigil_m(line, String.split(string), modifier(modifiers))
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
@@ -75,31 +75,17 @@ defmodule ShortMaps do
   end
 
 
-  defp do_sigil_m(line, [first_word | _] = words, modifiers) do
-    transform = 
-      case is_a_struct?(first_word) do
-        true -> &make_struct/3
-        false -> &make_map/3
-      end
-    transform.(line, words, modifier(modifiers))
-  end
-
-  defp is_a_struct?("%" <> _word), do: true
-  defp is_a_struct?(_), do: false
-
-  defp make_map(line, words, modifier) do
-    pairs = make_pairs(words, modifier)
-
-    {:%{}, line, pairs}
-  end
-
-  defp make_struct(_, _, ?s),
+  defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s),
     do: raise(ArgumentError, "structs can only consist of atom keys")
-  defp make_struct(_line, [ "%" <> struct_name | words], ?a) do
+  defp do_sigil_m(_line, ["%" <> struct_name | words], ?a) do
     struct = String.to_atom("Elixir." <> struct_name)
     pairs = make_pairs(words, ?a)
-
     quote do: struct(__MODULE__.unquote(struct), unquote(pairs))
+  end
+
+  defp do_sigil_m(line, words, modifier) do
+    pairs = make_pairs(words, modifier)
+    {:%{}, line, pairs}
   end
 
   defp make_pairs(words, modifier) do
