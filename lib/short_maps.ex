@@ -81,31 +81,32 @@ defmodule ShortMaps do
         true -> &make_struct/3
         false -> &make_map/3
       end
-    transform.(line, words, modifiers)
+    transform.(line, words, modifier(modifiers))
   end
 
-  defp is_a_struct?(word) do
-    Regex.match?(@first_letter_uppercase, word)
-  end
+  defp is_a_struct?("%" <> _word), do: true
+  defp is_a_struct?(_), do: false
 
-  defp make_map(line, words, modifiers) do
-    pairs = make_pairs(words, modifiers)
+  defp make_map(line, words, modifier) do
+    pairs = make_pairs(words, modifier)
 
     {:%{}, line, pairs}
   end
 
-  defp make_struct(_line, [struct_name | words], _modifiers) do
+  defp make_struct(_, _, ?s),
+    do: raise(ArgumentError, "structs can only consist of atom keys")
+  defp make_struct(_line, [ "%" <> struct_name | words], ?a) do
     struct = String.to_atom("Elixir." <> struct_name)
-    pairs = make_pairs(words, 'a')
+    pairs = make_pairs(words, ?a)
 
     quote do: struct(__MODULE__.unquote(struct), unquote(pairs))
   end
 
-  defp make_pairs(words, modifiers) do
+  defp make_pairs(words, modifier) do
     keys      = Enum.map(words, &strip_pin/1)
     variables = Enum.map(words, &handle_var/1)
 
-    case modifier(modifiers) do
+    case modifier do
       ?a -> keys |> Enum.map(&String.to_atom/1) |> Enum.zip(variables)
       ?s -> keys |> Enum.zip(variables)
     end
