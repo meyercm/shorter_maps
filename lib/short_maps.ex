@@ -1,6 +1,8 @@
 defmodule ShortMaps do
   @default_modifier ?s
 
+  @first_letter_uppercase ~r/^\p{Lu}/u
+
   @doc ~S"""
   Returns a map with the given keys bound to variables with the same name.
 
@@ -65,22 +67,48 @@ defmodule ShortMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    names     = String.split(string)
-    keys      = Enum.map(names, &strip_pin/1)
-    atom_keys = Enum.map(keys, &String.to_atom/1)
-    variables = Enum.map(names, &handle_var/1)
-
-    pairs =
-      case modifier(modifiers) do
-        ?a -> Enum.zip(atom_keys, variables)
-        ?s -> Enum.zip(keys, variables)
-      end
-
-    {:%{}, line, pairs}
+    do_sigil_m(line, String.split(string), modifiers)
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~m sigil"
+  end
+
+
+  defp do_sigil_m(line, [first_word | _] = words, modifiers) do
+    transform = 
+      case is_a_struct?(first_word) do
+        true -> &make_struct/3
+        false -> &make_map/3
+      end
+    transform.(line, words, modifiers)
+  end
+
+  defp is_a_struct?(word) do
+    Regex.match?(@first_letter_uppercase, word)
+  end
+
+  defp make_map(line, words, modifiers) do
+    pairs = make_pairs(words, modifiers)
+
+    {:%{}, line, pairs}
+  end
+
+  defp make_struct(_line, [struct_name | words], _modifiers) do
+    struct = String.to_atom("Elixir." <> struct_name)
+    pairs = make_pairs(words, 'a')
+
+    quote do: struct(__MODULE__.unquote(struct), unquote(pairs))
+  end
+
+  defp make_pairs(words, modifiers) do
+    keys      = Enum.map(words, &strip_pin/1)
+    variables = Enum.map(words, &handle_var/1)
+
+    case modifier(modifiers) do
+      ?a -> keys |> Enum.map(&String.to_atom/1) |> Enum.zip(variables)
+      ?s -> keys |> Enum.zip(variables)
+    end
   end
 
   defp strip_pin("^" <> name),

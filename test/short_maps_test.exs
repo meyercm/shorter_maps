@@ -50,6 +50,15 @@ defmodule ShortMapsTest do
     assert FunctionHead.test(%{baz: "bong"}) == :no_match
   end
 
+  defmodule Foo do
+    defstruct bar: nil
+  end
+
+  test "supports structs" do
+    bar = 1
+    assert ~m(Foo bar)a == %Foo{bar: 1}
+  end
+
   test "supports atom keys with the 'a' modifier" do
     assert ~m(foo bar)a = %{foo: "foo", bar: "bar"}
     assert {foo, bar} == {"foo", "bar"}
