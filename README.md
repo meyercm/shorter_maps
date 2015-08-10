@@ -85,7 +85,7 @@ iex(2)> defmodule Foo do
  <<...>>,
  [bar: nil]}
 
-iex(3)> ~m(%Foo bar) = %Foo{bar: 5}
+iex(3)> ~m(%Foo bar)a = %Foo{bar: 5}
 %Foo{bar: 5}
 iex(4)> bar
 5
