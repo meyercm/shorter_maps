@@ -102,4 +102,19 @@ defmodule ShortMapsTest do
     msg = "structs can only consist of atom keys"
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
   end
+
+  defmodule UseInsideStruct do
+    defstruct x: nil
+
+    def get_x(~m{%UseInsideStruct x}a), do: x
+    def inc_x(~m{%__MODULE__ x}a), do: x+1
+  end
+
+  test "can be used with module name within module of the struct" do
+    assert UseInsideStruct.get_x(%UseInsideStruct{x: 1}) == 1
+  end
+
+  test "can be used with __MODULE__ within module of the struct" do
+    assert UseInsideStruct.inc_x(%UseInsideStruct{x: 1}) == 2
+  end
 end
