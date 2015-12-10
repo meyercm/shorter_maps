@@ -96,7 +96,7 @@ defmodule ShortMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, String.split(string), modifier(modifiers))
+    do_sigil_m(line, String.split(string), modifier(modifiers), __CALLER__)
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
@@ -104,17 +104,23 @@ defmodule ShortMaps do
   end
 
 
-  defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s),
+  defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s, _caller),
     do: raise(ArgumentError, "structs can only consist of atom keys")
-  defp do_sigil_m(_line, ["%" <> struct_name | words], ?a) do
-    struct = String.to_atom("Elixir." <> struct_name)
+  defp do_sigil_m(_line, ["%" <> struct_name | words], ?a, caller) do
+    struct = resolve_module(struct_name, caller)
     pairs = make_pairs(words, ?a)
-    quote do: %__MODULE__.unquote(struct){unquote_splicing(pairs)}
+    quote do: %unquote(struct){unquote_splicing(pairs)}
   end
-
-  defp do_sigil_m(line, words, modifier) do
+  defp do_sigil_m(line, words, modifier, _caller) do
     pairs = make_pairs(words, modifier)
     {:%{}, line, pairs}
+  end
+
+  defp resolve_module("__MODULE__", caller) do
+    {:__MODULE__, [], caller.module}
+  end
+  defp resolve_module(struct_name, _caller) do
+    {:__aliases__, [], [String.to_atom(struct_name)]}
   end
 
   defp make_pairs(words, modifier) do
