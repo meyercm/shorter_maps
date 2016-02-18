@@ -127,6 +127,8 @@ defmodule ShortMaps do
     keys      = Enum.map(words, &strip_pin/1)
     variables = Enum.map(words, &handle_var/1)
 
+    ensure_valid_variable_names(keys)
+
     case modifier do
       ?a -> keys |> Enum.map(&String.to_atom/1) |> Enum.zip(variables)
       ?s -> keys |> Enum.zip(variables)
@@ -151,4 +153,12 @@ defmodule ShortMaps do
     do: mod
   defp modifier(_),
     do: raise(ArgumentError, "only these modifiers are supported: s, a")
+
+  defp ensure_valid_variable_names(keys) do
+    Enum.each keys, fn k ->
+      unless k =~ ~r/\A[a-zA-Z_]\w*\Z/ do
+        raise ArgumentError, "invalid variable name: #{k}"
+      end
+    end
+  end
 end

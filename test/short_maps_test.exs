@@ -72,6 +72,16 @@ defmodule ShortMapsTest do
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
   end
 
+  test "good errors when variables are invalid" do
+    code = quote do: ~m(4oo)
+    msg = "invalid variable name: 4oo"
+    assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
+
+    code = quote do: ~m($hello!)
+    msg = "invalid variable name: $hello!"
+    assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
+  end
+
   defmodule Foo do
     defstruct bar: nil
   end
