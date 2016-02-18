@@ -30,6 +30,7 @@ defmodule ShortMaps.Mixfile do
   end
 
   defp deps do
-    [{:ex_doc, "~> 0.10", only: :docs}]
+    [{:earmark, ">= 0.0.0", only: :docs},
+     {:ex_doc, ">= 0.0.0", only: :docs}]
   end
 end
