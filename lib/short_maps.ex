@@ -1,5 +1,6 @@
 defmodule ShortMaps do
-  @default_modifier ?s
+  @default_modifier_m ?s
+  @default_modifier_M ?a
 
   @first_letter_uppercase ~r/^\p{Lu}/u
 
@@ -96,13 +97,20 @@ defmodule ShortMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, String.split(string), modifier(modifiers), __CALLER__)
+    do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_m), __CALLER__)
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~m sigil"
   end
 
+  defmacro sigil_M(term, modifiers)
+  defmacro sigil_M({:<<>>, line, [string]}, modifiers) do
+    do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_M), __CALLER__)
+  end
+  defmacro sigil_M({:<<>>, _, _}, _modifiers) do
+    raise ArgumentError, "interpolation is not supported with the ~M sigil"
+  end
 
   defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s, _caller),
     do: raise(ArgumentError, "structs can only consist of atom keys")
@@ -147,12 +155,11 @@ defmodule ShortMaps do
     String.to_atom(name) |> Macro.var(nil)
   end
 
-  defp modifier([]),
-    do: @default_modifier
-  defp modifier([mod]) when mod in 'as',
-    do: mod
-  defp modifier(_),
-    do: raise(ArgumentError, "only these modifiers are supported: s, a")
+  defp modifier([], default), do: default
+  defp modifier([mod], _default) when mod in 'as', do: mod
+  defp modifier(_, _default) do
+    raise(ArgumentError, "only these modifiers are supported: s, a")
+  end
 
   defp ensure_valid_variable_names(keys) do
     Enum.each keys, fn k ->
