@@ -5,7 +5,7 @@ defmodule ShortMaps.Mixfile do
   @repo_url "https://github.com/whatyouhide/short_maps"
 
   def project do
-    [app: :short_maps,
+    [app: :shorter_maps,
      version: @version,
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
