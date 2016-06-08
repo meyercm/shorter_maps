@@ -1,3 +1,43 @@
+#ShorterMaps
+
+`~M` sigil for atom-keyed map shorthand.
+
+ShorterMaps is an unwilling branch off of the original project, `ShortMaps`. The
+original source is located [here][original_repo].  My contributions are
+extremely minor, and I give all credit to the original author.  The reasons for
+the divergence are summarized [here][divergent-opinion-issue].
+
+The key syntactic difference is motivated by the trailing `a` in `~m{}a`.  To
+maintain backward compatibility, that syntax still works, but ShorterMaps adds
+a ~M sigil that defaults to the `a` modifier.
+
+```elixir
+iex> import ShorterMaps
+nil
+...> ~M{foo} = %{foo: 1} # Macro expands to %{foo: foo} = %{foo: 1}
+%{foo: 1}
+...> foo
+1
+...> bar = 2
+2
+...> ~M{foo bar}
+%{foo: 1, bar: 2}
+```
+
+This package is unavailable in Hex, in hopes that ShortMaps and ShorterMaps can
+be reconciled in the future.  To use:
+
+```elixir
+# mix.exs
+
+defp deps do
+  [
+    {:shorter_maps, github: "meyercm/shorter_maps"},
+  ]
+end
+```
+
+
 # ShortMaps
 
 Implementation of a `~m` sigil for ES6-like maps in Elixir.
@@ -125,3 +165,5 @@ For more information, please refer to <http://unlicense.org>
 
 
 [google-groups]: https://groups.google.com/forum/#!topic/elixir-lang-core/NoUo2gqQR3I
+[original-repo]: https://github.com/whatyouhide/short_maps
+[divergent-opinion-issue]: https://github.com/whatyouhide/short_maps/issues/11

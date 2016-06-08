@@ -1,6 +1,6 @@
-defmodule ShortMapsTest do
+defmodule ShorterMapsTest do
   use ExUnit.Case, async: true
-  import ShortMaps
+  import ShorterMaps
 
   test "uses the bindings from the current environment" do
     foo = 1

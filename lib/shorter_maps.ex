@@ -1,4 +1,4 @@
-defmodule ShortMaps do
+defmodule ShorterMaps do
   @default_modifier_m ?s
   @default_modifier_M ?a
 
