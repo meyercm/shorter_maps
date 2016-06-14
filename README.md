@@ -21,15 +21,23 @@ The key syntactic difference is motivated by the trailing `a` in `~m{}a`.  To ma
 
 ## Basic Usage
 
-**Note that you always have to `import ShorterMaps` for the sigil to work.**
+**Note**: you must `import ShorterMaps` for the sigil to work.**
 
-### Pattern Matching
+### Pattern Matching / Function Heads
 
 ```elixir
 iex> import ShortMaps
-...> ~M(foo bar baz) = %{foo: 1, bar: 2, baz: 3}
+...> ~M{foo bar baz} = %{foo: 1, bar: 2, baz: 3}
 ...> foo
 1
+...>
+...> defmodule MyMod do
+...>   def extract_id(~M{id} = args), do: id
+...> end
+...> MyMod.extract_id(%{id: 5, name: "Chris"})
+5
+
+end
 ```
 
 ### Map Construction
@@ -37,9 +45,9 @@ iex> import ShortMaps
 ```elixir
 iex> import ShortMaps
 ...> name = "Meg"
-...> ~M(name) # M = atom keys
+...> ~M{name} # M = atom keys
 %{name: "Meg"}
-...> ~m(name) # m = String keys
+...> ~m{name} # m = String keys
 %{"name" => "Meg"}
 ```
 
@@ -70,9 +78,9 @@ iex> import ShortMaps
 ```elixir
 iex> import ShortMaps
 ...> name = "Meg"
-...> ~M(^name) = %{name: "Meg"}
+...> ~M{^name} = %{name: "Meg"}
 %{name: "Meg"}
-...> ~M(^name) = %{name: "Megan"}
+...> ~M{^name} = %{name: "Megan"}
 ** (MatchError) no match of right hand side value: %{name: "Megan"}
 ```
 
