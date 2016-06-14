@@ -1,22 +1,24 @@
 defmodule ShortMaps.Mixfile do
   use Mix.Project
 
-  @version "0.1.1"
-  @repo_url "https://github.com/whatyouhide/short_maps"
+  @version "1.0.0"
+  @repo_url "https://github.com/meyercm/shorter_maps"
 
   def project do
-    [app: :shorter_maps,
-     version: @version,
-     elixir: "~> 1.0",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps,
-     # Hex
-     package: hex_package,
-     description: "Implementation of a ~m sigil for ES6-like maps in Elixir",
-     # Docs
-     name: "ShortMaps",
-     docs: [source_ref: "v#{@version}", main: "ShortMaps", source_url: @repo_url]]
+    [
+      app: :shorter_maps,
+      version: @version,
+      elixir: "~> 1.0",
+      build_embedded: Mix.env == :prod,
+      start_permanent: Mix.env == :prod,
+      deps: deps,
+      # Hex
+      package: hex_package,
+      description: "~M sigil for map shorthand. `~M{id name} ~> %{id: id, name: name}`",
+      # Docs
+      name: "ShorterMaps",
+      docs: [source_ref: "v#{@version}", main: "ShorterMaps", source_url: @repo_url]
+    ]
   end
 
   def application do
@@ -24,7 +26,7 @@ defmodule ShortMaps.Mixfile do
   end
 
   defp hex_package do
-    [maintainers: ["Andrea Leopardi"],
+    [maintainers: ["Chris Meyer"],
      licenses: ["MIT"],
      links: %{"GitHub" => @repo_url}]
   end

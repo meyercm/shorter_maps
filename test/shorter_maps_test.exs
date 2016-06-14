@@ -117,7 +117,7 @@ defmodule ShorterMapsTest do
 
   test "when using structs, fails on non-existing keys" do
     code = quote do: ~m(%Foo bar baaz)a = %Foo{bar: 1}
-    msg = ~r/unknown key :baaz for struct ShortMapsTest.Foo/
+    msg = ~r/unknown key :baaz for struct ShorterMapsTest.Foo/
     assert_raise CompileError, msg, fn ->
       Code.eval_quoted(code, [], __ENV__)
     end
