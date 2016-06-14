@@ -4,6 +4,35 @@ defmodule ShorterMaps do
 
   @first_letter_uppercase ~r/^\p{Lu}/u
 
+  @doc """
+  Returns a string keyed map with the given keys bound to variables of the same
+  name.
+
+  A common use of `~m` is when working with JSON, which uses exclusively string
+  keys for its maps.  This macro can be used to construct maps from existing
+  variables, or to destructure a map into new variables:
+
+      # Construction:
+      name = "Chris"
+      id = 5
+      ~m{name id} # <= %{"name" => "Chris", "id" => 5}
+
+      # Pattern Matching
+      ~m{name} = %{"name" => "Bob", "id" => 3}
+      name # <= "Bob"
+
+  See ~M (sigil_M) and the README for extended usages.
+  """
+  defmacro sigil_m(term, modifiers)
+
+  defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
+    do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_m), __CALLER__)
+  end
+
+  defmacro sigil_m({:<<>>, _, _}, _modifiers) do
+    raise ArgumentError, "interpolation is not supported with the ~m sigil"
+  end
+
   @doc ~S"""
   Returns a map with the given keys bound to variables with the same name.
 
@@ -18,21 +47,21 @@ defmodule ShorterMaps do
       %{foo: foo, bar: bar, baz: baz} = my_map
       foo #=> "foo"
 
-  The `~m` sigil provides a shorter way to do exactly this. It splits the given
+  The `~M` sigil provides a shorter way to do exactly this. It splits the given
   list of words on whitespace (i.e., like the `~w` sigil) and creates a map with
   these keys as the keys and with variables with the same name as values. Using
   this sigil, this code can be reduced to just this:
 
-      ~m(foo bar baz)a = my_map
+      ~M(foo bar baz) = my_map
       foo #=> "foo"
 
-  `~m` can be used in regular pattern matches like the ones in the examples
+  `~M` can be used in regular pattern matches like the ones in the examples
   above but also inside function heads:
 
       defmodule Test do
         import ShortMaps
 
-        def test(~m(foo)a), do: foo
+        def test(~M(foo)), do: foo
         def test(_),       do: :no_match
       end
 
@@ -44,13 +73,13 @@ defmodule ShorterMaps do
   Matching using the `~m` sigil has full support for the pin operator:
 
       bar = "bar"
-      ~m(foo ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
+      ~M(foo ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
       foo #=> "foo"
       bar #=> "bar"
-      ~m(foo ^bar) = %{foo: "FOO", bar: "bar"} #=> this is still ok
+      ~M(foo ^bar) = %{foo: "FOO", bar: "bar"} #=> this is still ok
       foo #=> "FOO"; since we didn't pin it, it's now bound to a new value
       bar #=> "bar"
-      ~m(foo ^bar) = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
+      ~M(foo ^bar) = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
 
   ## Structs
 
@@ -61,49 +90,29 @@ defmodule ShorterMaps do
         defstruct bar: nil
       end
 
-      ~m(%Foo bar)a = %Foo{bar: 4711}
+      ~M(%Foo bar) = %Foo{bar: 4711}
       bar #=> 4711
-
-  _NOTE: Structs only support atom keys, so you must use the 'a' modifier._
 
   ## Modifiers
 
-  The `~m` sigil supports both maps with atom keys as well as string keys. Atom
-  keys can be specified using the `a` modifier, while string keys can be
-  specified with the `s` modifier (which is the default).
+  The `~m` and `~M` sigils support postfix operators for backwards
+  compatibility with `ShortMaps`. Atom keys can be specified using the `a`
+  modifier, while string keys can be specified with the `s` modifier.
 
-      ~m(my_key)s = %{"my_key" => "my value"}
-      my_key #=> "my value"
+      ~m(blah)a == ~M{blah}
+      ~M(blah)s == ~m{blah}
 
   ## Pitfalls
 
-  Interpolation isn't supported. `~m(#{foo})` will raise an `ArgumentError`
+  Interpolation isn't supported. `~M(#{foo})` will raise an `ArgumentError`
   exception.
 
   The variables associated with the keys in the map have to exist in the scope
-  if the `~m` sigil is used outside a pattern match:
+  if the `~M` sigil is used outside a pattern match:
 
       foo = "foo"
-      ~m(foo bar) #=> ** (RuntimeError) undefined function: bar/0
-
-  ## Discussion
-
-  For more information on this sigil and the discussion that lead to it, visit
-  [this
-  topic](https://groups.google.com/forum/#!topic/elixir-lang-core/NoUo2gqQR3I)
-  in the Elixir mailing list.
-
+      ~M(foo bar) #=> ** (RuntimeError) undefined function: bar/0
   """
-  defmacro sigil_m(term, modifiers)
-
-  defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_m), __CALLER__)
-  end
-
-  defmacro sigil_m({:<<>>, _, _}, _modifiers) do
-    raise ArgumentError, "interpolation is not supported with the ~m sigil"
-  end
-
   defmacro sigil_M(term, modifiers)
   defmacro sigil_M({:<<>>, line, [string]}, modifiers) do
     do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_M), __CALLER__)
