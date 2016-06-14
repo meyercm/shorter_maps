@@ -21,7 +21,7 @@ The key syntactic difference is motivated by the trailing `a` in `~m{}a`.  To ma
 
 ## Basic Usage
 
-**Note**: you must `import ShorterMaps` for the sigil to work.**
+**Note**: you must `import ShorterMaps` for the sigil to work.
 
 ### Pattern Matching / Function Heads
 
@@ -84,8 +84,7 @@ iex> import ShortMaps
 ** (MatchError) no match of right hand side value: %{name: "Megan"}
 ```
 
-You can see more examples and read some docs in the docs for the `sigil_m`
-macro.
+You can see more examples in the docs for the `sigil_M`/`sigil_m` macros.
 
 ## Installation
 
