@@ -26,7 +26,7 @@ The key syntactic difference is motivated by the trailing `a` in `~m{}a`.  To ma
 ### Pattern Matching / Function Heads
 
 ```elixir
-iex> import ShortMaps
+iex> import ShorterMaps
 ...> ~M{foo bar baz} = %{foo: 1, bar: 2, baz: 3}
 ...> foo
 1
@@ -43,7 +43,7 @@ end
 ### Map Construction
 
 ```elixir
-iex> import ShortMaps
+iex> import ShorterMaps
 ...> name = "Meg"
 ...> ~M{name} # M = atom keys
 %{name: "Meg"}
@@ -56,7 +56,7 @@ iex> import ShortMaps
 The first word inside the sigil must be '%' followed by the module name:
 
 ```elixir
-iex> import ShortMaps
+iex> import ShorterMaps
 ...> defmodule MyStruct do
 ...>   defstruct [id: 0, name: ""]
 ...> end
@@ -76,7 +76,7 @@ iex> import ShortMaps
 ### Variable Pinning
 
 ```elixir
-iex> import ShortMaps
+iex> import ShorterMaps
 ...> name = "Meg"
 ...> ~M{^name} = %{name: "Meg"}
 %{name: "Meg"}
