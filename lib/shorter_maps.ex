@@ -152,6 +152,8 @@ defmodule ShorterMaps do
     end
   end
 
+  defp strip_pin("_" <> name),
+    do: name
   defp strip_pin("^" <> name),
     do: name
   defp strip_pin(name),

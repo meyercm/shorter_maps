@@ -84,6 +84,20 @@ iex> import ShorterMaps
 ** (MatchError) no match of right hand side value: %{name: "Megan"}
 ```
 
+### Variable Ignore
+
+Useful for pattern matching against the structure of a map but don't need all of the variables.
+
+```elixir
+iex> import ShorterMaps
+...> ~M{_foo bar} = %{foo: "bar", bar: "foo"}
+%{bar: "foo", foo: "bar"}
+...> bar
+"foo"
+...> foo
+** (CompileError) iex:4: undefined function foo/0
+```
+
 You can see more examples in the docs for the `sigil_M`/`sigil_m` macros.
 
 ## Installation
@@ -93,7 +107,7 @@ You can see more examples in the docs for the `sigil_M`/`sigil_m` macros.
 
 defp deps do
   [
-    {:shorter_maps, "~> 1.0"},
+    {:shorter_maps, "~> 1.1"},
   ]
 end
 ```
