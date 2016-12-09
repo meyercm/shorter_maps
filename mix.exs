@@ -17,7 +17,6 @@ defmodule ShortMaps.Mixfile do
       description: "~M sigil for map shorthand. `~M{id name} ~> %{id: id, name: name}`",
       # Docs
       name: "ShorterMaps",
-      docs: [source_ref: "v#{@version}", main: "ShorterMaps", source_url: @repo_url]
     ]
   end
 
@@ -32,7 +31,9 @@ defmodule ShortMaps.Mixfile do
   end
 
   defp deps do
-    [{:earmark, ">= 0.0.0", only: :docs},
-     {:ex_doc, ">= 0.0.0", only: :docs}]
+    [
+      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:earmark, ">= 0.0.0", only: :dev},
+    ]
   end
 end
