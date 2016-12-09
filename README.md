@@ -2,6 +2,14 @@
 
 `~M` sigil for map shorthand. `~M{a} ~> %{a: a}`
 
+## New Features
+
+#### v1.1
+
+ - Added support for leading underscore variables (`~M{_id name} = person`),
+which allows specifying structural requirements while minimizing compiler warnings
+for unused variables.
+
 ## Motivation
 
 Code like `%{id: id, name: name, address: address}` occurs with high
@@ -86,7 +94,8 @@ iex> import ShorterMaps
 
 ### Variable Ignore
 
-Useful for pattern matching against the structure of a map but don't need all of the variables.
+Useful for pattern matching against the structure of a map when you don't need
+all of the variables.
 
 ```elixir
 iex> import ShorterMaps

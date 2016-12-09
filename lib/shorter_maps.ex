@@ -52,25 +52,27 @@ defmodule ShorterMaps do
   these keys as the keys and with variables with the same name as values. Using
   this sigil, this code can be reduced to just this:
 
-      ~M(foo bar baz) = my_map
+      ~M{foo bar baz} = my_map
       foo #=> "foo"
 
   `~M` can be used in regular pattern matches like the ones in the examples
-  above but also inside function heads:
+  above but also inside function heads (note the use of `_bar` in this example):
 
       defmodule Test do
         import ShortMaps
 
-        def test(~M(foo)), do: foo
+        def test(~M{foo _bar}), do: {:with_bar, foo}
+        def test(~M{foo}), do: foo
         def test(_),       do: :no_match
       end
 
+      Test.test %{foo: "hello world", bar: :ok} #=> {:with_bar, "hello world"}
       Test.test %{foo: "hello world"} #=> "hello world"
       Test.test %{bar: "hey there!"}  #=> :no_match
 
   ## Pinning
 
-  Matching using the `~m` sigil has full support for the pin operator:
+  Matching using the `~M`/`~m` sigils has full support for the pin operator:
 
       bar = "bar"
       ~M(foo ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
@@ -141,7 +143,7 @@ defmodule ShorterMaps do
   end
 
   defp make_pairs(words, modifier) do
-    keys      = Enum.map(words, &strip_pin/1)
+    keys      = Enum.map(words, &strip_prefix/1)
     variables = Enum.map(words, &handle_var/1)
 
     ensure_valid_variable_names(keys)
@@ -152,11 +154,11 @@ defmodule ShorterMaps do
     end
   end
 
-  defp strip_pin("_" <> name),
+  defp strip_prefix("_" <> name),
     do: name
-  defp strip_pin("^" <> name),
+  defp strip_prefix("^" <> name),
     do: name
-  defp strip_pin(name),
+  defp strip_prefix(name),
     do: name
 
   defp handle_var("^" <> name) do
