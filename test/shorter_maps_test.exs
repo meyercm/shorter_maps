@@ -45,6 +45,11 @@ defmodule ShorterMapsTest do
     end
   end
 
+  test "ignore syntax in pattern matches will match" do
+    assert ~m(_foo)a = %{foo: "bar"}
+    assert ~M(_foo) = %{foo: "bar"}
+  end
+
   test "can be used in function heads for anonymous functions" do
     fun = fn
       ~m(foo) -> foo
