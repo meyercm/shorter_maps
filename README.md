@@ -8,7 +8,7 @@
 
  - Added support for map update syntax (`~M{old_map|first_name last_name}`),
 instead of writing `%{old_map|first_name: first_name, last_name: last_name}`.
-Works with both `~m` and `~M`
+Works with both `~m` and `~M`.
 
 #### v1.1
 
