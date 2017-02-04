@@ -2,6 +2,36 @@ defmodule ShorterMapsTest do
   use ExUnit.Case, async: true
   import ShorterMaps
 
+  describe "update syntax" do
+    test "works for ~M" do
+      old_map = %{hey: "ho"}
+      hey = "lets go"
+      new_map = ~M{old_map|hey}
+      assert new_map == %{hey: "lets go"}
+    end
+
+    test "works for ~m" do
+      old_map = %{"name" => "chris", "id" => 7}
+      name = "bob"
+      new_map = ~m{old_map|name}
+      assert new_map == %{"name" => "bob", "id" => 7}
+    end
+
+    test "many keys works for ~M" do
+      old_map = %{a: 1, b: 2, c: 3}
+      a = b = c = 7
+      new_map = ~M{old_map|a b c}
+      assert new_map == %{a: 7, b: 7, c: 7}
+    end
+
+    test "many keys works for ~m" do
+      old_map = %{"a" => 1, "b" => 2, "c" => 3}
+      a = b = c = 7
+      new_map = ~m{old_map|a b c}
+      assert new_map == %{"a" => 7, "b" => 7, "c" => 7}
+    end
+  end
+
   test "uses the bindings from the current environment" do
     foo = 1
     assert ~m(foo)a == %{foo: 1}

@@ -130,9 +130,16 @@ defmodule ShorterMaps do
     pairs = make_pairs(words, ?a)
     quote do: %unquote(struct){unquote_splicing(pairs)}
   end
-  defp do_sigil_m(line, words, modifier, _caller) do
-    pairs = make_pairs(words, modifier)
-    {:%{}, line, pairs}
+  defp do_sigil_m(line, [first|rest] = words, modifier, _caller) do
+    case String.split(first, "|") do
+      [just_one] ->
+        pairs = make_pairs(words, modifier)
+        {:%{}, line, pairs}
+      [old_map, new_first] ->
+        pairs = make_pairs([new_first|rest], modifier)
+        {:%{}, line, [{:|, line, [handle_var(old_map), pairs]}]}
+      _ -> raise(ArgumentError, "too many | in #{words}")
+    end
   end
 
   defp resolve_module("__MODULE__", caller) do
