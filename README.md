@@ -1,8 +1,14 @@
-# ShorterMaps
+# `{:shorter_maps, "~> 1.2"},`
 
 `~M` sigil for map shorthand. `~M{a} ~> %{a: a}`
 
 ## New Features
+
+#### v1.2
+
+ - Added support for map update syntax (`~M{old_map|first_name last_name}`),
+instead of writing `%{old_map|first_name: first_name, last_name: last_name}`.
+Works with both `~m` and `~M`
 
 #### v1.1
 
@@ -107,6 +113,18 @@ iex> import ShorterMaps
 ** (CompileError) iex:4: undefined function foo/0
 ```
 
+### Map Update Syntax
+
+```elixir
+
+iex> import ShorterMaps
+...> record = %{first_name: "chris", last_name: "meyer", id: 1}
+...> [first_name, last_name] = ["Chris", "Meyer"]
+...> updated = ~M{record|first_name last_name}
+%{first_name: "Chris", id: 1, last_name: "Meyer"}
+
+```
+
 You can see more examples in the docs for the `sigil_M`/`sigil_m` macros.
 
 ## Installation
@@ -116,7 +134,7 @@ You can see more examples in the docs for the `sigil_M`/`sigil_m` macros.
 
 defp deps do
   [
-    {:shorter_maps, "~> 1.1"},
+    {:shorter_maps, "~> 1.2"},
   ]
 end
 ```

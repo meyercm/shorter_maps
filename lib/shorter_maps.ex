@@ -1,4 +1,9 @@
 defmodule ShorterMaps do
+  @readme Path.join(__DIR__, "../README.md")
+  @external_resource @readme
+  {:ok, readme_contents} = File.read(@readme)
+  @moduledoc "#{readme_contents}"
+
   @default_modifier_m ?s
   @default_modifier_M ?a
 
@@ -132,7 +137,7 @@ defmodule ShorterMaps do
   end
   defp do_sigil_m(line, [first|rest] = words, modifier, _caller) do
     case String.split(first, "|") do
-      [just_one] ->
+      [_just_one] ->
         pairs = make_pairs(words, modifier)
         {:%{}, line, pairs}
       [old_map, new_first] ->
