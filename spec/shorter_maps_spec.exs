@@ -34,7 +34,7 @@ defmodule ShorterMapsSpec do
       example "with mixed keys" do
         key_1 = "value_1"
         key_2_alt = :val_2
-        expect ~m{key_1, key_2: key_2_alt}
+        expect ~m{key_1, key_2: key_2_alt} |> to(eq %{"key_1" => "value_1", "key_2" => :val_2})
       end
     end
   end
@@ -60,14 +60,14 @@ defmodule ShorterMapsSpec do
   describe "function head matches" do
     context "in module" do
       defmodule TestModule do
-        def test(~M{key_1, key_2}), do: :first
-        def test(~m{key_1}), do: :second
+        def test(~M{key_1, key_2}), do: {:first, key_1, key_2}
+        def test(~m{key_1}), do: {:second, key_1}
         def test(_), do: :third
       end
 
       it "matches in module function heads" do
-        expect TestModule.test(%{key_1: 1, key_2: 2}) |> to(eq :first)
-        expect TestModule.test(%{"key_1" => 1}) |> to(eq :second)
+        expect TestModule.test(%{key_1: 1, key_2: 2}) |> to(eq {:first, 1, 2})
+        expect TestModule.test(%{"key_1" => 1}) |> to(eq {:second, 1})
       end
     end
 
@@ -90,17 +90,32 @@ defmodule ShorterMapsSpec do
     defmodule TestStruct do
       defstruct [a: nil]
     end
+    defmodule TestStruct.Child.GrandChild.Struct do
+      defstruct [a: nil]
+    end
     example "of construction" do
       a = 5
       expect ~M{%TestStruct a} |> to(eq %TestStruct{a: 5})
     end
-    example "of inline pattern-match"
-    example "in function head"
-    xit "fails for non-existing keys" do
-      code = quote do: ~M(%TestStruct a, baaz) = %TestStruct{a: 1}
-      msg = ~r/unknown key :baaz for struct ShorterMapsSpec.TestStruct/
-      expect (fn -> Code.eval_quoted(code, [], __ENV__) end).() |> to(raise_exception(CompileError))
+
+    example "of alias resolution" do
+      alias TestStruct, as: TS
+      a = 3
+      expect ~M{%TS a} |> to(eq %TS{a: 3})
     end
+    example "of alias resolution" do
+      alias TestStruct.Child.GrandChild.{Struct}
+      a = 0
+      expect ~M{%Struct a} |> to(eq %TestStruct.Child.GrandChild.Struct{a: 0})
+    end
+    example "of case pattern-match" do
+      a = 5
+      case %TestStruct{a: 0} do
+        ~M{%TestStruct ^a} -> raise("shouldn't have matched")
+        ~M{%TestStruct _a} -> :ok
+      end
+    end
+
 
   end
 
@@ -178,7 +193,7 @@ defmodule ShorterMapsSpec do
       end
       example "sad case" do
         case %{real_val: 19} do
-          ~M{_not_present, real_val} -> raise("matched when it shouldn't have")
+          ~M{_not_present, _real_val} -> raise("matched when it shouldn't have")
           _ -> :ok
         end
       end
@@ -190,7 +205,7 @@ defmodule ShorterMapsSpec do
       end
       example "sad case" do
         case %{"real_val" => 19} do
-          ~m{_not_present, real_val} -> raise("matched when it shouldn't have")
+          ~m{_not_present, _real_val} -> raise("matched when it shouldn't have")
           _ -> :ok
         end
       end
