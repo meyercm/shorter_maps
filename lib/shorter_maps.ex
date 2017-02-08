@@ -7,8 +7,6 @@ defmodule ShorterMaps do
   @default_modifier_m ?s
   @default_modifier_M ?a
 
-  @first_letter_uppercase ~r/^\p{Lu}/u
-
   @doc """
   Returns a string keyed map with the given keys bound to variables of the same
   name.
@@ -31,7 +29,7 @@ defmodule ShorterMaps do
   defmacro sigil_m(term, modifiers)
 
   defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_m), __CALLER__)
+    do_sigil_m(line, string, modifier(modifiers, @default_modifier_m), __CALLER__)
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
@@ -122,41 +120,52 @@ defmodule ShorterMaps do
   """
   defmacro sigil_M(term, modifiers)
   defmacro sigil_M({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, String.split(string), modifier(modifiers, @default_modifier_M), __CALLER__)
+    do_sigil_m(line, string, modifier(modifiers, @default_modifier_M), __CALLER__)
   end
   defmacro sigil_M({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~M sigil"
   end
 
-  defp do_sigil_m(_line, ["%" <> _struct_name | _words], ?s, _caller),
-    do: raise(ArgumentError, "structs can only consist of atom keys")
-  defp do_sigil_m(_line, ["%" <> struct_name | words], ?a, caller) do
+  @doc false
+  def do_sigil_m(_line, "%" <> _rest, ?s, _caller) do
+    raise(ArgumentError, "structs can only consist of atom keys")
+  end
+  def do_sigil_m(_line, "%" <> rest, ?a, caller) do
+    [struct_name|others] = String.split(rest, " ")
     struct = resolve_module(struct_name, caller)
-    pairs = make_pairs(words, ?a)
+    body = Enum.join(others, " ")
+    pairs = make_pairs(body, ?a)
     quote do: %unquote(struct){unquote_splicing(pairs)}
   end
-  defp do_sigil_m(line, [first|rest] = words, modifier, _caller) do
-    case String.split(first, "|") do
+  def do_sigil_m(line, body, modifier, _caller) do
+    case String.split(body, "|") do
       [_just_one] ->
-        pairs = make_pairs(words, modifier)
+        pairs = make_pairs(body, modifier)
         {:%{}, line, pairs}
-      [old_map, new_first] ->
-        pairs = make_pairs([new_first|rest], modifier)
+      [old_map, new_body] ->
+        pairs = make_pairs(new_body, modifier)
         {:%{}, line, [{:|, line, [handle_var(old_map), pairs]}]}
-      _ -> raise(ArgumentError, "too many | in #{words}")
+      _ -> raise(ArgumentError, "too many | in #{body}")
     end
   end
 
-  defp resolve_module("__MODULE__", caller) do
+  @doc false
+  def resolve_module("__MODULE__", caller) do
     {:__MODULE__, [], caller.module}
   end
-  defp resolve_module(struct_name, _caller) do
+  def resolve_module(struct_name, _caller) do
     {:__aliases__, [], [String.to_atom(struct_name)]}
   end
 
-  defp make_pairs(words, modifier) do
-    keys      = Enum.map(words, &strip_prefix/1)
-    variables = Enum.map(words, &handle_var/1)
+  @doc false
+  def make_pairs(body, modifier) do
+    words = String.split(body, ",")
+            |> Enum.map(fn w ->
+              String.trim(w)
+              |> String.split(": ")
+            end)
+    keys = extract_keys_or_vars(words, :keys) |> strip_prefix
+    variables = extract_keys_or_vars(words, :vars) |> handle_var
 
     ensure_valid_variable_names(keys)
 
@@ -166,30 +175,42 @@ defmodule ShorterMaps do
     end
   end
 
-  defp strip_prefix("_" <> name),
-    do: name
-  defp strip_prefix("^" <> name),
-    do: name
-  defp strip_prefix(name),
-    do: name
+  @doc false
+  def strip_prefix(list) when is_list(list), do: Enum.map(list, &strip_prefix/1)
+  def strip_prefix("_" <> name), do: name
+  def strip_prefix("^" <> name), do: name
+  def strip_prefix(name), do: name
 
-  defp handle_var("^" <> name) do
-    {:^, [], [Macro.var(String.to_atom(name), nil)]}
+  @doc false
+  def handle_var(list) when is_list(list), do: Enum.map(list, &handle_var/1)
+  def handle_var("^" <> name), do: {:^, [], [handle_var(name)]}
+  def handle_var(name), do: name |> String.to_atom |> Macro.var(nil)
+
+  @doc false
+  def extract_keys_or_vars(list, mode, acc \\ [])
+  def extract_keys_or_vars([], _mode, acc), do: Enum.reverse(acc)
+  def extract_keys_or_vars([[first]|rest], mode, acc) do
+    extract_keys_or_vars(rest, mode, [first|acc])
   end
-  defp handle_var(name) do
-    String.to_atom(name) |> Macro.var(nil)
+  def extract_keys_or_vars([[key, _var]|rest], :keys = mode, acc) do
+    extract_keys_or_vars(rest, mode, [key|acc])
+  end
+  def extract_keys_or_vars([[_key, var]|rest], :vars = mode, acc) do
+    extract_keys_or_vars(rest, mode, [var|acc])
   end
 
-  defp modifier([], default), do: default
-  defp modifier([mod], _default) when mod in 'as', do: mod
-  defp modifier(_, _default) do
+  @doc false
+  def modifier([], default), do: default
+  def modifier([mod], _default) when mod in 'as', do: mod
+  def modifier(_, _default) do
     raise(ArgumentError, "only these modifiers are supported: s, a")
   end
 
-  defp ensure_valid_variable_names(keys) do
+  @doc false
+  def ensure_valid_variable_names(keys) do
     Enum.each keys, fn k ->
       unless k =~ ~r/\A[a-zA-Z_]\w*\Z/ do
-        raise ArgumentError, "invalid variable name: #{k}"
+        raise ArgumentError, "invalid variable name: #{inspect k}"
       end
     end
   end

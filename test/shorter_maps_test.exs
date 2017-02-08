@@ -1,6 +1,9 @@
 defmodule ShorterMapsTest do
   use ExUnit.Case, async: true
+
   import ShorterMaps
+
+
 
   describe "update syntax" do
     test "works for ~M" do
@@ -20,63 +23,77 @@ defmodule ShorterMapsTest do
     test "many keys works for ~M" do
       old_map = %{a: 1, b: 2, c: 3}
       a = b = c = 7
-      new_map = ~M{old_map|a b c}
+      new_map = ~M{old_map|a, b, c}
       assert new_map == %{a: 7, b: 7, c: 7}
     end
 
     test "many keys works for ~m" do
       old_map = %{"a" => 1, "b" => 2, "c" => 3}
       a = b = c = 7
-      new_map = ~m{old_map|a b c}
+      new_map = ~m{old_map|a, b, c}
+      assert new_map == %{"a" => 7, "b" => 7, "c" => 7}
+    end
+
+    test "mixed keys works for ~M" do
+      old_map = %{a: 1, b: 2, c: 3}
+      a = b = d = 7
+      new_map = ~M{old_map|a, b, c: d}
+      assert new_map == %{a: 7, b: 7, c: 7}
+    end
+
+    test "mixed keys works for ~m" do
+      old_map = %{"a" => 1, "b" => 2, "c" => 3}
+      a = b = d = 7
+      new_map = ~m{old_map|a, b, c: d}
       assert new_map == %{"a" => 7, "b" => 7, "c" => 7}
     end
   end
 
   test "uses the bindings from the current environment" do
     foo = 1
-    assert ~m(foo)a == %{foo: 1}
+    assert ~m{foo}a == %{foo: 1}
     assert ~M(foo) == %{foo: 1}
   end
 
   test "strings from env" do
     foo = 1
-    assert ~m(foo) == %{"foo" => 1}
-    assert ~M(foo)s == %{"foo" => 1}
+    assert ~m{foo} == %{"foo" => 1}
+    assert ~M{foo}s == %{"foo" => 1}
   end
 
   test "can be used in regular matches" do
-    assert ~m(foo)a = %{foo: "bar"}
-    assert ~M(bar) = %{bar: "baz"}
+    assert ~m{foo}a = %{foo: "bar"}
+    assert ~M{bar} = %{bar: "baz"}
     {foo, bar} # this removes the "variable foo is unused" warning
   end
 
   test "when used in pattern matches, it binds variables in the scope" do
-    ~m(foo)a = %{foo: "bar"}
+    ~m{foo}a = %{foo: "bar"}
     assert foo == "bar"
-    ~M(bar) = %{bar: "baz"}
+    ~M{bar} = %{bar: "baz"}
     assert bar == "baz"
   end
 
   test "pin syntax in pattern matches will match on same value" do
     foo = "bar"
-    assert ~m(^foo)a = %{foo: "bar"}
-    assert ~M(^foo) = %{foo: "bar"}
+    assert ~m{^foo} = %{"foo" => "bar"}
+    assert ~M{^foo} = %{foo: "bar"}
   end
 
   test "pin syntax in pattern matches will raise if no match" do
     msg = "no match of right hand side value: %{foo: \"baaz\"}"
     assert_raise MatchError, msg, fn ->
       foo = "bar"
-      ~m(^foo)a = %{foo: "baaz"}
+      ~m{^foo}a = %{foo: "baaz"}
     end
     assert_raise MatchError, msg, fn ->
       foo = "bar"
-      ~M(^foo) = %{foo: "baaz"}
+      ~M{^foo} = %{foo: "baaz"}
     end
   end
 
   test "ignore syntax in pattern matches will match" do
-    assert ~m(_foo)a = %{foo: "bar"}
+    assert ~m(_foo) = %{"foo" => "bar"}
     assert ~M(_foo) = %{foo: "bar"}
   end
 
@@ -105,12 +122,12 @@ defmodule ShorterMapsTest do
   end
 
   test "supports atom keys with the 'a' modifier" do
-    assert ~m(foo bar)a = %{foo: "foo", bar: "bar"}
+    assert ~m(foo, bar)a = %{foo: "foo", bar: "bar"}
     assert {foo, bar} == {"foo", "bar"}
   end
 
   test "supports string keys with the 's' modifier" do
-    assert ~m(foo bar)s = %{"foo" => "hello", "bar" => "world"}
+    assert ~m(foo, bar)s = %{"foo" => "hello", "bar" => "world"}
     assert {foo, bar} == {"hello", "world"}
   end
 
@@ -121,18 +138,18 @@ defmodule ShorterMapsTest do
   end
 
   test "no interpolation is supported" do
-    code = quote do: ~m(foo #{bar} baz)a
+    code = quote do: ~m(foo, #{bar}, baz)a
     msg = "interpolation is not supported with the ~m sigil"
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
   end
 
   test "good errors when variables are invalid" do
     code = quote do: ~m(4oo)
-    msg = "invalid variable name: 4oo"
+    msg = "invalid variable name: \"4oo\""
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
 
     code = quote do: ~m($hello!)
-    msg = "invalid variable name: $hello!"
+    msg = "invalid variable name: \"$hello!\""
     assert_raise ArgumentError, msg, fn -> Code.eval_quoted(code) end
   end
 
@@ -151,7 +168,7 @@ defmodule ShorterMapsTest do
   end
 
   test "when using structs, fails on non-existing keys" do
-    code = quote do: ~m(%Foo bar baaz)a = %Foo{bar: 1}
+    code = quote do: ~m(%Foo bar, baaz)a = %Foo{bar: 1}
     msg = ~r/unknown key :baaz for struct ShorterMapsTest.Foo/
     assert_raise CompileError, msg, fn ->
       Code.eval_quoted(code, [], __ENV__)

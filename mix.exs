@@ -1,7 +1,7 @@
 defmodule ShortMaps.Mixfile do
   use Mix.Project
 
-  @version "1.2.0"
+  @version "2.0.0"
   @repo_url "https://github.com/meyercm/shorter_maps"
 
   def project do
@@ -11,12 +11,14 @@ defmodule ShortMaps.Mixfile do
       elixir: "~> 1.0",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
-      deps: deps,
+      deps: deps(),
       # Hex
-      package: hex_package,
+      package: hex_package(),
       description: "~M sigil for map shorthand. `~M{id name} ~> %{id: id, name: name}`",
       # Docs
       name: "ShorterMaps",
+      # Testing
+      preferred_cli_env: [espec: :test],
     ]
   end
 
@@ -34,6 +36,7 @@ defmodule ShortMaps.Mixfile do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:earmark, ">= 0.0.0", only: :dev},
+      {:espec, "~> 1.2", only: [:dev, :test]},
     ]
   end
 end
