@@ -78,13 +78,13 @@ defmodule ShorterMaps do
   Matching using the `~M`/`~m` sigils has full support for the pin operator:
 
       bar = "bar"
-      ~M(foo, ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
+      ~M{foo, ^bar} = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
       foo #=> "foo"
       bar #=> "bar"
-      ~M(foo, ^bar) = %{foo: "FOO", bar: "bar"} #=> this is still ok
+      ~M{foo, ^bar} = %{foo: "FOO", bar: "bar"} #=> this is still ok
       foo #=> "FOO"; since we didn't pin it, it's now bound to a new value
       bar #=> "bar"
-      ~M(foo, ^bar) = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
+      ~M{foo, ^bar} = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
 
   ## Structs
 
@@ -95,7 +95,7 @@ defmodule ShorterMaps do
         defstruct bar: nil
       end
 
-      ~M(%Foo bar) = %Foo{bar: 4711}
+      ~M{%Foo bar} = %Foo{bar: 4711}
       bar #=> 4711
 
   ## Modifiers
@@ -104,19 +104,19 @@ defmodule ShorterMaps do
   compatibility with `ShortMaps`. Atom keys can be specified using the `a`
   modifier, while string keys can be specified with the `s` modifier.
 
-      ~m(blah)a == ~M{blah}
-      ~M(blah)s == ~m{blah}
+      ~m{blah}a == ~M{blah}
+      ~M{blah}s == ~m{blah}
 
   ## Pitfalls
 
-  Interpolation isn't supported. `~M(#{foo})` will raise an `ArgumentError`
+  Interpolation isn't supported. `~M{#{foo}}` will raise an `ArgumentError`
   exception.
 
   The variables associated with the keys in the map have to exist in the scope
   if the `~M` sigil is used outside a pattern match:
 
       foo = "foo"
-      ~M(foo, bar) #=> ** (RuntimeError) undefined function: bar/0
+      ~M{foo, bar} #=> ** (RuntimeError) undefined function: bar/0
   """
   defmacro sigil_M(term, modifiers)
   defmacro sigil_M({:<<>>, line, [string]}, modifiers) do

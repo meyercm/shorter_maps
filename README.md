@@ -47,7 +47,7 @@ located [here][original-repo]. The reasons for the divergence are summarized
 
 * Atom keys: `~M{a, b}` => `%{a: a, b: b}`
 * String keys: `~m{a, b}` => `%{"a" => a, "b" => b}`
-* Structs: `~M{%Person id name}` => `%Person{id: id, name: name}`
+* Structs: `~M{%Person id, name}` => `%Person{id: id, name: name}`
 * Pinned variables: `~M{^a, b}` => `%{a: ^a, b: b}`
 * Ignore matching: `~M{_a, b}` => `%{a: _a, b: b}`
 * Map update: `~M{old|a, b, c}` => `%{old|a: a, b: b, c: c}`

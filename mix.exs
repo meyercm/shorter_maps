@@ -1,7 +1,7 @@
 defmodule ShortMaps.Mixfile do
   use Mix.Project
 
-  @version "2.0.0"
+  @version "2.0.1"
   @repo_url "https://github.com/meyercm/shorter_maps"
 
   def project do
@@ -14,7 +14,7 @@ defmodule ShortMaps.Mixfile do
       deps: deps(),
       # Hex
       package: hex_package(),
-      description: "~M sigil for map shorthand. `~M{id name} ~> %{id: id, name: name}`",
+      description: "~M sigil for map shorthand. `~M{id, name} ~> %{id: id, name: name}`",
       # Docs
       name: "ShorterMaps",
       # Testing
