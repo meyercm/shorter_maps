@@ -1,8 +1,17 @@
-# `{:shorter_maps, "~> 1.2"},`
+## ShorterMaps
 
 `~M` sigil for map shorthand. `~M{a} ~> %{a: a}`
 
-## New Features
+`{:shorter_maps, "~> 2.0"},`
+
+### New Features
+
+#### v2.0
+
+ - _Backward incompatible change_: keys must now be separated with commas.
+ - Struct names are still followed by a space: `~M{%Person id, name}`
+ - "Mixed mode" allows non-matching keys and variables, e.g.
+`~M{key_1, key_2, key_3: other_var}` => `%{key_1: key_1, key_2: key_2, key_3: other_var}`
 
 #### v1.2
 
@@ -16,127 +25,87 @@ Works with both `~m` and `~M`.
 which allows specifying structural requirements while minimizing compiler warnings
 for unused variables.
 
-## Motivation
+### Motivation
 
-Code like `%{id: id, name: name, address: address}` occurs with high
-frequency in many programming languages.  In Elixir, additional uses occur as we
-pattern match to destructure existing maps.
+Code like `%{id: id, name: name, address: address}` occurs with high frequency
+in many programming languages.  In Elixir, additional uses occur as we pattern
+match to destructure existing maps.
 
-ES6 (ES2015 for those folks who insist on proper names) provided javascript with
-a shorthand to create maps with keys inferred by variable names, and allowed
-destructuring those maps into variables named for the keys.  `ShorterMaps`
-provides that functionality to Elixir.
+ES6 provided javascript with a shorthand to create maps with keys inferred by
+variable names, and allowed destructuring those maps into variables named for
+the keys.  `ShorterMaps` provides that functionality to Elixir.
 
 ### Credits
 
-ShorterMaps adds additional features to the original project, `ShortMaps`, located [here][original-repo]. The reasons for the divergence are summarized [here][divergent-opinion-issue].
+ShorterMaps adds additional features to the original project, `ShortMaps`,
+located [here][original-repo]. The reasons for the divergence are summarized
+[here][divergent-opinion-issue].
 
-The key syntactic difference is motivated by the trailing `a` in `~m{}a`.  To maintain backward compatibility, that syntax still works, but ShorterMaps adds a ~M sigil that defaults to the `a` modifier.
+### Syntax Overview => Macro Expansions
 
-## Basic Usage
+`~M` and `~m` can be used to replace maps __anywhere__ in your code. Here are the syntactic variants the macro exposes:
 
-**Note**: you must `import ShorterMaps` for the sigil to work.
+* Atom keys: `~M{a, b}` => `%{a: a, b: b}`
+* String keys: `~m{a, b}` => `%{"a" => a, "b" => b}`
+* Structs: `~M{%Person id name}` => `%Person{id: id, name: name}`
+* Pinned variables: `~M{^a, b}` => `%{a: ^a, b: b}`
+* Ignore matching: `~M{_a, b}` => `%{a: _a, b: b}`
+* Map update: `~M{old|a, b, c}` => `%{old|a: a, b: b, c: c}`
+* Mixed mode: `~M{a, b: b_alt}` => `%{a: a, b: b_alt}`
 
-### Pattern Matching / Function Heads
+**Note**: you must `import ShorterMaps` for the sigils to work.
 
-```elixir
-iex> import ShorterMaps
-...> ~M{foo bar baz} = %{foo: 1, bar: 2, baz: 3}
-...> foo
-1
-...>
-...> defmodule MyMod do
-...>   def extract_id(~M{id} = args), do: id
-...> end
-...> MyMod.extract_id(%{id: 5, name: "Chris"})
-5
-
-end
-```
-
-### Map Construction
+### Example Usage
 
 ```elixir
 iex> import ShorterMaps
-...> name = "Meg"
-...> ~M{name} # M = atom keys
-%{name: "Meg"}
-...> ~m{name} # m = String keys
-%{"name" => "Meg"}
-```
-
-### Structs
-
-The first word inside the sigil must be '%' followed by the module name:
-
-```elixir
-iex> import ShorterMaps
-...> defmodule MyStruct do
-...>   defstruct [id: 0, name: ""]
-...> end
-...>
-...> # Struct construction:
-...> id = 5
 ...> name = "Chris"
-...> ~M{%MyStruct id name}
-%MyStruct{id: 5, name: "Chris"}
-...>
-...> # Pattern Matching:
-...> ~M{%MyStruct id} = %MyStruct{id: 1, name: "Bob"}
-...> id
+...> id = 6
+...> ~M{name, id}
+%{name: "Chris", id: 6}
+
+...> # String Keys:
+...> ~m{name, id}
+%{"name" => "Chris", "id" => 6}
+
+...> # Structs:
+...> defmodule MyStruct do
+...>   defstruct [id: nil]
+...> end
+...> ~M{%MyStruct id}
+%MyStruct{id: 6}
+```
+
+### Pattern matching:
+```elixir
+iex> map = %{a: 1, b: 2, c: 3}
+...> ~M{a, b} = map
+...> a
 1
-```
 
-### Variable Pinning
+# in function heads:
+...> defmodule MyModule do
+...>   def my_func(~M{name, _id}), do: {:id_present, name}
+...>   def my_func(~M{name}), do: {:no_id, name}
+...> end
+iex> MyModule.my_func(%{name: "Chris"})
+{:no_id, "Chris"}
+...> MyModule.my_func(%{name: "Chris", id: 1})
+{:id_present, "Chris"}
 
-```elixir
-iex> import ShorterMaps
-...> name = "Meg"
-...> ~M{^name} = %{name: "Meg"}
-%{name: "Meg"}
-...> ~M{^name} = %{name: "Megan"}
-** (MatchError) no match of right hand side value: %{name: "Megan"}
-```
+# Update syntax:
+iex> old_map = %{id: 1, name: "Chris"}
+...> id = 7
+...> ~M{old_map|id} # => %{old_map|id: id}
+%{id: 7, name: "Chris"}
 
-### Variable Ignore
+# Mixed keys:
+iex> old_map = %{id: 1, first_name: "Chris", last_name: "Meyer"}
+...> new_id = 6
+...> first_name = "C"
+...> ~M{old_map|id: new_id, first_name}
+%{id: 6, first_name: "C", last_name: "Meyer"}
 
-Useful for pattern matching against the structure of a map when you don't need
-all of the variables.
-
-```elixir
-iex> import ShorterMaps
-...> ~M{_foo bar} = %{foo: "bar", bar: "foo"}
-%{bar: "foo", foo: "bar"}
-...> bar
-"foo"
-...> foo
-** (CompileError) iex:4: undefined function foo/0
-```
-
-### Map Update Syntax
-
-```elixir
-
-iex> import ShorterMaps
-...> record = %{first_name: "chris", last_name: "meyer", id: 1}
-...> [first_name, last_name] = ["Chris", "Meyer"]
-...> updated = ~M{record|first_name last_name}
-%{first_name: "Chris", id: 1, last_name: "Meyer"}
-
-```
-
-You can see more examples in the docs for the `sigil_M`/`sigil_m` macros.
-
-## Installation
-
-```elixir
-# mix.exs
-
-defp deps do
-  [
-    {:shorter_maps, "~> 1.2"},
-  ]
-end
 ```
 
 [google-groups]: https://groups.google.com/forum/#!topic/elixir-lang-core/NoUo2gqQR3I

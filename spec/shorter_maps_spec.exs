@@ -2,6 +2,7 @@ defmodule ShorterMapsSpec do
   use ESpec
   import ShorterMaps
 
+  def eval(quoted_code), do: fn -> Code.eval_quoted(quoted_code) end
 
   describe "map construction" do
     context "~M" do
@@ -20,6 +21,10 @@ defmodule ShorterMapsSpec do
         key_2_alt = :val2
         expect ~M{key_1, key_2: key_2_alt} |> to(eq %{key_1: "val_1", key_2: :val2})
       end
+      it "raises on invalid varnames" do
+        quoted = quote do: ~M{4asdf}
+        expect fn-> Code.eval_quoted(quoted) end |> to(raise_exception())
+      end
     end
     context "~m" do
       example "with one key" do
@@ -35,6 +40,10 @@ defmodule ShorterMapsSpec do
         key_1 = "value_1"
         key_2_alt = :val_2
         expect ~m{key_1, key_2: key_2_alt} |> to(eq %{"key_1" => "value_1", "key_2" => :val_2})
+      end
+      it "raises on invalid varnames" do
+        code = quote do: ~m{4asdf}
+        expect eval(code) |> to(raise_exception(ArgumentError))
       end
     end
   end
@@ -55,6 +64,10 @@ defmodule ShorterMapsSpec do
       expect key_1 |> to(eq :val_1)
       expect key_2_alt |> to(eq "val 2")
     end
+    it "fails to match when there is no match" do
+      code = quote do: ~M{key_1} = %{key_2: 1}
+      expect eval(code) |> to(raise_exception(MatchError))
+    end
   end
 
   describe "function head matches" do
@@ -74,14 +87,14 @@ defmodule ShorterMapsSpec do
     context "in anonymous functions" do
       it "matches anonymous function heads" do
         fun = fn
-            ~m{foo} -> {:first, foo}
-            ~M{foo} -> {:second, foo}
-            _       -> :no_match
-          end
+                ~m{foo} -> {:first, foo}
+                ~M{foo} -> {:second, foo}
+                _       -> :no_match
+              end
 
-          assert fun.(%{"foo" => "bar"}) == {:first, "bar"}
-          assert fun.(%{foo: "barr"}) == {:second, "barr"}
-          assert fun.(%{baz: "bong"}) == :no_match
+        assert fun.(%{"foo" => "bar"}) == {:first, "bar"}
+        assert fun.(%{foo: "barr"}) == {:second, "barr"}
+        assert fun.(%{baz: "bong"}) == :no_match
       end
     end
   end
@@ -114,6 +127,25 @@ defmodule ShorterMapsSpec do
         ~M{%TestStruct ^a} -> raise("shouldn't have matched")
         ~M{%TestStruct _a} -> :ok
       end
+    end
+
+    # TODO: figure out why this test doesn't work.  A manual test in a compiled
+    # .ex does raise a KeyError, but not this one:
+    # it "raises on invalid keys" do
+    #   code = quote do: b = 5; ~m{%TestStruct b}
+    #   expect eval(code) |> to(raise_exception(KeyError))
+    # end
+
+    it "works for a local module" do
+      defmodule InnerTestStruct do
+        defstruct [a: nil]
+        def test() do
+          a = 5
+          ~M{%__MODULE__ a}
+        end
+      end
+      # need to use the :__struct__ version due to compile order?
+      expect InnerTestStruct.test |> to(eq %{__struct__: InnerTestStruct, a: 5})
     end
 
 

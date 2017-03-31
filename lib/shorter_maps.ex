@@ -18,7 +18,7 @@ defmodule ShorterMaps do
       # Construction:
       name = "Chris"
       id = 5
-      ~m{name id} # <= %{"name" => "Chris", "id" => 5}
+      ~m{name, id} # <= %{"name" => "Chris", "id" => 5}
 
       # Pattern Matching
       ~m{name} = %{"name" => "Bob", "id" => 3}
@@ -55,7 +55,7 @@ defmodule ShorterMaps do
   these keys as the keys and with variables with the same name as values. Using
   this sigil, this code can be reduced to just this:
 
-      ~M{foo bar baz} = my_map
+      ~M{foo, bar, baz} = my_map
       foo #=> "foo"
 
   `~M` can be used in regular pattern matches like the ones in the examples
@@ -64,7 +64,7 @@ defmodule ShorterMaps do
       defmodule Test do
         import ShortMaps
 
-        def test(~M{foo _bar}), do: {:with_bar, foo}
+        def test(~M{foo, _bar}), do: {:with_bar, foo}
         def test(~M{foo}), do: foo
         def test(_),       do: :no_match
       end
@@ -78,13 +78,13 @@ defmodule ShorterMaps do
   Matching using the `~M`/`~m` sigils has full support for the pin operator:
 
       bar = "bar"
-      ~M(foo ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
+      ~M(foo, ^bar) = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
       foo #=> "foo"
       bar #=> "bar"
-      ~M(foo ^bar) = %{foo: "FOO", bar: "bar"} #=> this is still ok
+      ~M(foo, ^bar) = %{foo: "FOO", bar: "bar"} #=> this is still ok
       foo #=> "FOO"; since we didn't pin it, it's now bound to a new value
       bar #=> "bar"
-      ~M(foo ^bar) = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
+      ~M(foo, ^bar) = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
 
   ## Structs
 
@@ -116,7 +116,7 @@ defmodule ShorterMaps do
   if the `~M` sigil is used outside a pattern match:
 
       foo = "foo"
-      ~M(foo bar) #=> ** (RuntimeError) undefined function: bar/0
+      ~M(foo, bar) #=> ** (RuntimeError) undefined function: bar/0
   """
   defmacro sigil_M(term, modifiers)
   defmacro sigil_M({:<<>>, line, [string]}, modifiers) do
