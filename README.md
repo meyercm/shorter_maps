@@ -52,6 +52,7 @@ located [here][original-repo]. The reasons for the divergence are summarized
 * Ignore matching: `~M{_a, b}` => `%{a: _a, b: b}`
 * Map update: `~M{old|a, b, c}` => `%{old|a: a, b: b, c: c}`
 * Mixed mode: `~M{a, b: b_alt}` => `%{a: a, b: b_alt}`
+* Modifiers: `~m{blah}a == ~M{blah}` or `~M{blah}s == ~m{blah}`
 
 **Note**: you must `import ShorterMaps` for the sigils to work.
 
