@@ -130,21 +130,21 @@ defmodule ShorterMaps do
   def do_sigil_m(_line, "%" <> _rest, ?s, _caller) do
     raise(ArgumentError, "structs can only consist of atom keys")
   end
-  def do_sigil_m(_line, "%" <> rest, ?a, caller) do
+  def do_sigil_m(line, "%" <> rest, ?a, caller) do
     [struct_name|others] = String.split(rest, " ")
     struct = resolve_module(struct_name, caller)
     body = Enum.join(others, " ")
-    pairs = make_pairs(body, ?a)
+    pairs = make_pairs(body, ?a, line)
     quote do: %unquote(struct){unquote_splicing(pairs)}
   end
   def do_sigil_m(line, body, modifier, _caller) do
     case String.split(body, "|") do
       [_just_one] ->
-        pairs = make_pairs(body, modifier)
+        pairs = make_pairs(body, modifier, line)
         {:%{}, line, pairs}
       [old_map, new_body] ->
-        pairs = make_pairs(new_body, modifier)
-        {:%{}, line, [{:|, line, [handle_var(old_map), pairs]}]}
+        pairs = make_pairs(new_body, modifier, line)
+        {:%{}, line, [{:|, line, [handle_var(old_map, line), pairs]}]}
       _ -> raise(ArgumentError, "too many | in #{body}")
     end
   end
@@ -158,14 +158,14 @@ defmodule ShorterMaps do
   end
 
   @doc false
-  def make_pairs(body, modifier) do
+  def make_pairs(body, modifier, line) do
     words = String.split(body, ",")
             |> Enum.map(fn w ->
               String.trim(w)
               |> String.split(": ")
             end)
-    keys = extract_keys_or_vars(words, :keys) |> strip_prefix
-    variables = extract_keys_or_vars(words, :vars) |> handle_var
+    keys = extract_keys_or_vars(words, :keys) |> fix_keys
+    variables = extract_keys_or_vars(words, :vars) |> handle_var(line)
 
     ensure_valid_variable_names(keys)
 
@@ -176,17 +176,27 @@ defmodule ShorterMaps do
   end
 
   @doc false
-  def strip_prefix(list) when is_list(list), do: Enum.map(list, &strip_prefix/1)
-  def strip_prefix("_" <> name), do: name
-  def strip_prefix("^" <> name), do: name
-  def strip_prefix(name), do: name
+  def fix_keys(list) when is_list(list), do: Enum.map(list, &fix_keys/1)
+  def fix_keys("_" <> name), do: name
+  def fix_keys("^" <> name), do: name
+  def fix_keys(name) do
+    String.replace_suffix(name, "()", "")
+  end
 
   @doc false
-  def handle_var(list) when is_list(list), do: Enum.map(list, &handle_var/1)
-  def handle_var("^" <> name), do: {:^, [], [handle_var(name)]}
-  def handle_var(name), do: name |> String.to_atom |> Macro.var(nil)
+  def handle_var(list, line) when is_list(list), do: Enum.map(list, fn i -> handle_var(i, line) end)
+  def handle_var("^" <> name, line), do: {:^, [], [handle_var(name, line)]}
+  def handle_var(name, line) do
+    if String.ends_with?(name, "()") do
+      {name |> String.replace_suffix("()", "") |> String.to_atom, line, []}
+    else
+      name |> String.to_atom |> Macro.var(nil)
+    end
+  end
 
   @doc false
+  # parses a list of key/var pairs and constructs a list containing just the
+  # keys or just the vars; e.g. [[a], [b, c]] => [a, b] (keys) or [a, c] (vars)
   def extract_keys_or_vars(list, mode, acc \\ [])
   def extract_keys_or_vars([], _mode, acc), do: Enum.reverse(acc)
   def extract_keys_or_vars([[first]|rest], mode, acc) do

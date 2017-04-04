@@ -242,6 +242,12 @@ defmodule ShorterMapsSpec do
         end
       end
     end
+
+    describe "zero-arity" do
+      example "happy case" do
+        expect ~M{node()} |> to(eq(%{node: node()}))
+      end
+    end
   end
 
 end
