@@ -243,11 +243,25 @@ defmodule ShorterMapsSpec do
       end
     end
 
+    def blah do
+      :bleh
+    end
+
     describe "zero-arity" do
-      example "happy case" do
+      example "Kernel function" do
         expect ~M{node()} |> to(eq(%{node: node()}))
       end
+
+      example "local function" do
+        expect ~M{blah()} |> to(eq(%{blah: :bleh}))
+      end
+
+      it "calls the function at run-time" do
+        mypid = self()
+        expect ~M{self()} |> to(eq(%{self: mypid}))
+      end
     end
+
   end
 
 end
