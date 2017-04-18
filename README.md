@@ -5,6 +5,9 @@
 `{:shorter_maps, "~> 2.0"},`
 
 ### New Features
+#### v2.1
+
+ - Allow zero arity functions: `~M{node()}` => `%{node: node()}`
 
 #### v2.0
 
@@ -52,6 +55,7 @@ located [here][original-repo]. The reasons for the divergence are summarized
 * Ignore matching: `~M{_a, b}` => `%{a: _a, b: b}`
 * Map update: `~M{old|a, b, c}` => `%{old|a: a, b: b, c: c}`
 * Mixed mode: `~M{a, b: b_alt}` => `%{a: a, b: b_alt}`
+* Zero-arity: `~M{a, b()}` => `%{a: a, b: b()}`
 
 **Note**: you must `import ShorterMaps` for the sigils to work.
 
