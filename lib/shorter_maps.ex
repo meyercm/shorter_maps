@@ -187,11 +187,15 @@ defmodule ShorterMaps do
   def handle_var(list, line) when is_list(list), do: Enum.map(list, fn i -> handle_var(i, line) end)
   def handle_var("^" <> name, line), do: {:^, [], [handle_var(name, line)]}
   def handle_var(name, line) do
-    if String.ends_with?(name, "()") do
-      {name |> String.replace_suffix("()", "") |> String.to_atom, line, []}
-    else
-      name |> String.to_atom |> Macro.var(nil)
+    case Code.string_to_quoted(name, line) do
+      {:ok, quoted} -> quoted
+      other -> other
     end
+    # if String.ends_with?(name, "()") do
+    #   {name |> String.replace_suffix("()", "") |> String.to_atom, line, []}
+    # else
+    #   name |> String.to_atom |> Macro.var(nil)
+    # end
   end
 
   @doc false
