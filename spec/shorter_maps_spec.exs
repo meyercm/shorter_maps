@@ -262,6 +262,12 @@ defmodule ShorterMapsSpec do
       end
     end
 
+    describe "nested sigils" do
+      example "two levels" do
+        [a,b,c] = [1,2,3]
+        expect ~M{a, b: ~M(b, c)} |> to(eq(%{a: 1, b: %{b: 2, c: 3}}))
+      end
+    end
   end
 
 end
