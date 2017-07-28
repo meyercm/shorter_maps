@@ -39,11 +39,11 @@ defmodule ShorterMapsSpec do
       example "with mixed keys" do
         key_1 = "value_1"
         key_2_alt = :val_2
-        expect ~m{key_1, key_2: key_2_alt} |> to(eq %{"key_1" => "value_1", "key_2" => :val_2})
+        expect ~m{key_1, "key_2" => key_2_alt} |> to(eq %{"key_1" => "value_1", "key_2" => :val_2})
       end
       it "raises on invalid varnames" do
         code = quote do: ~m{4asdf}
-        expect eval(code) |> to(raise_exception(ArgumentError))
+        expect eval(code) |> to(raise_exception(SyntaxError))
       end
     end
   end
@@ -168,6 +168,21 @@ defmodule ShorterMapsSpec do
         {a, d} = {6, 7}
         expect ~M{initial|a, b: d} |> to(eq %{a: 6, b: 7, c: 3})
       end
+      it "can update a struct" do
+        old_struct = %Range{first: 1, last: 2}
+        last = 3
+        expect ~M{old_struct|last} |> to(eq %Range{first: 1, last: 3})
+      end
+      defmodule TestStructForUpdate do
+        defstruct [a: 1, b: 2, c: 3]
+      end
+
+      example "of multiple key update" do
+        old_struct = %TestStructForUpdate{a: 10, b: 20, c: 30}
+        a = 3
+        b = 4
+        expect ~M{old_struct|a, b} |> to(eq %TestStructForUpdate{a: 3, b: 4, c: 30})
+      end
     end
     context "~m" do
       example "with one key" do
@@ -183,7 +198,7 @@ defmodule ShorterMapsSpec do
       it "allows mixed keys" do
         initial = %{"a" => 1, "b" => 2, "c" => 3}
         {a, d} = {6, 7}
-        expect ~m{initial|a, b: d} |> to(eq %{"a" => 6, "b" => 7, "c" => 3})
+        expect ~m{initial|a, "b" => d} |> to(eq %{"a" => 6, "b" => 7, "c" => 3})
       end
     end
   end
@@ -268,6 +283,39 @@ defmodule ShorterMapsSpec do
         expect ~M{a, b: ~M(b, c)} |> to(eq(%{a: 1, b: %{b: 2, c: 3}}))
       end
     end
+    describe "literals" do
+      example "adding" do
+        a = 1
+        expect ~M{a, b: a+2} |> to(eq(%{a: 1, b: 3}))
+      end
+      example "function call" do
+        a = []
+        expect ~M{a, len: length(a)} |> to(eq(%{a: [], len: 0}))
+      end
+      example "embedded shortermap" do
+        a = 1
+        b = 2
+        expect ~M{a, b: ~M(b)} |> to(eq(%{a: 1, b: %{b: 2}}))
+      end
+      example "embedded commas" do
+        a = 1
+        expect ~M{a, b: <<1, 2, 3>>} |> to(eq(%{a: 1, b: <<1, 2, 3>>}))
+      end
+      example "function call with arguments" do
+        a = :hey
+        expect ~M{a, b: div(10, 3)} |> to(eq(%{a: :hey, b: 3}))
+      end
+      example "pipeline" do
+        a = :hey
+        expect ~M{a, b: a |> Atom.to_string} |> to(eq(%{a: :hey, b: "hey"}))
+      end
+      example "string keys" do
+        a = "blah"
+        b = "bleh"
+        expect ~m{a, "b" => ~m(a, b)} |> to(eq(%{"a" => "blah", "b" => %{"a" => "blah", "b" => "bleh"}}))
+      end
+    end
+
   end
 
 end
