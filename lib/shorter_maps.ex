@@ -8,28 +8,28 @@ defmodule ShorterMaps do
   @default_modifier_M ?a
 
   @doc """
-  Returns a string keyed map with the given keys bound to variables of the same
-  name.
+  Expands to a string keyed map where the keys are a string containing the
+  variable names, e.g. `~m{name}` expands to `%{"name" => name}`.
 
-  A common use of `~m` is when working with JSON, which uses exclusively string
-  keys for its maps.  This macro can be used to construct maps from existing
-  variables, or to destructure a map into new variables:
+  Some common uses of `~m` are when working with JSON and Regex captures, which
+  use exclusively string keys in their maps.
 
-      # Construction:
-      name = "Chris"
-      id = 5
-      ~m{name, id} # <= %{"name" => "Chris", "id" => 5}
+      # JSON example:
+      # Here, `~m{name, age}` expands to `%{"name" => name, "age" => age}`
+      iex> ~m{name, age} = Poison.decode!("{\"name\": \"Chris\",\"age\": \"old\"}")
+      %{"name" => "Chris", "age" => "old"}
+      ...> name
+      "Chris"
+      ...> age
+      "old"
 
-      # Pattern Matching
-      ~m{name} = %{"name" => "Bob", "id" => 3}
-      name # <= "Bob"
 
-  See ~M (sigil_M) and the README for extended usages.
+  See the README for extended syntax and usage.
   """
   defmacro sigil_m(term, modifiers)
 
-  defmacro sigil_m({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, string, modifier(modifiers, @default_modifier_m), __CALLER__)
+  defmacro sigil_m({:<<>>, _line, [string]}, modifiers) do
+    do_sigil_m(string, modifier(modifiers, @default_modifier_m))
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
@@ -37,176 +37,105 @@ defmodule ShorterMaps do
   end
 
   @doc ~S"""
-  Returns a map with the given keys bound to variables with the same name.
+  Expands an atom-keyed map with the given keys bound to variables with the same
+  name.
 
-  This macro sigil is used to reduce boilerplate when writing pattern matches on
-  maps that bind variables with the same name as the map keys. For example,
-  given a map that looks like this:
+  Because `~M` operates on atoms, it is compatible with Structs.
 
-      my_map = %{foo: "foo", bar: "bar", baz: "baz"}
+  ## Examples:
 
-  ..the following is very common Elixir code:
+      # Map construction:
+      iex> tty = "/dev/ttyUSB0"
+      ...> baud = 19200
+      ...> device = ~M{tty, baud}
+      %{baud: 19200, tty: "/dev/ttyUSB0"}
 
-      %{foo: foo, bar: bar, baz: baz} = my_map
-      foo #=> "foo"
+      # Map Update:
+      ...> baud = 115200
+      ...> %{device|baud}
+      %{baud: 115200, tty: "/dev/ttyUSB0"}
 
-  The `~M` sigil provides a shorter way to do exactly this. It splits the given
-  list of words on whitespace (i.e., like the `~w` sigil) and creates a map with
-  these keys as the keys and with variables with the same name as values. Using
-  this sigil, this code can be reduced to just this:
+      # Struct Construction
+      iex> id = 100
+      ...> ~M{%Person id}
+      %Person{id: 100, other_key: :default_val}
 
-      ~M{foo, bar, baz} = my_map
-      foo #=> "foo"
-
-  `~M` can be used in regular pattern matches like the ones in the examples
-  above but also inside function heads (note the use of `_bar` in this example):
-
-      defmodule Test do
-        import ShortMaps
-
-        def test(~M{foo, _bar}), do: {:with_bar, foo}
-        def test(~M{foo}), do: foo
-        def test(_),       do: :no_match
-      end
-
-      Test.test %{foo: "hello world", bar: :ok} #=> {:with_bar, "hello world"}
-      Test.test %{foo: "hello world"} #=> "hello world"
-      Test.test %{bar: "hey there!"}  #=> :no_match
-
-  ## Pinning
-
-  Matching using the `~M`/`~m` sigils has full support for the pin operator:
-
-      bar = "bar"
-      ~M{foo, ^bar} = %{foo: "foo", bar: "bar"} #=> this is ok, `bar` matches
-      foo #=> "foo"
-      bar #=> "bar"
-      ~M{foo, ^bar} = %{foo: "FOO", bar: "bar"} #=> this is still ok
-      foo #=> "FOO"; since we didn't pin it, it's now bound to a new value
-      bar #=> "bar"
-      ~M{foo, ^bar} = %{foo: "foo", bar: "BAR"} #=> will raise MatchError
-
-  ## Structs
-
-  For using structs instead of plain maps, the first word must be prefixed with
-  '%':
-
-      defmodule Foo do
-        defstruct bar: nil
-      end
-
-      ~M{%Foo bar} = %Foo{bar: 4711}
-      bar #=> 4711
-
-  ## Modifiers
-
-  The `~m` and `~M` sigils support postfix operators for backwards
-  compatibility with `ShortMaps`. Atom keys can be specified using the `a`
-  modifier, while string keys can be specified with the `s` modifier.
-
-      ~m{blah}a == ~M{blah}
-      ~M{blah}s == ~m{blah}
-
-  ## Pitfalls
-
-  Interpolation isn't supported. `~M{#{foo}}` will raise an `ArgumentError`
-  exception.
-
-  The variables associated with the keys in the map have to exist in the scope
-  if the `~M` sigil is used outside a pattern match:
-
-      foo = "foo"
-      ~M{foo, bar} #=> ** (RuntimeError) undefined function: bar/0
   """
   defmacro sigil_M(term, modifiers)
-  defmacro sigil_M({:<<>>, line, [string]}, modifiers) do
-    do_sigil_m(line, string, modifier(modifiers, @default_modifier_M), __CALLER__)
+  defmacro sigil_M({:<<>>, _line, [string]}, modifiers) do
+    do_sigil_m(string, modifier(modifiers, @default_modifier_M))
   end
   defmacro sigil_M({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~M sigil"
   end
 
   @doc false
-  def do_sigil_m(_line, "%" <> _rest, ?s, _caller) do
+  def do_sigil_m("%" <> _rest, ?s) do
     raise(ArgumentError, "structs can only consist of atom keys")
   end
-  def do_sigil_m(line, "%" <> rest, ?a, caller) do
-    [struct_name|others] = String.split(rest, " ")
-    struct = resolve_module(struct_name, caller)
-    body = Enum.join(others, " ")
-    pairs = make_pairs(body, ?a, line)
-    quote do: %unquote(struct){unquote_splicing(pairs)}
-  end
-  def do_sigil_m(line, body, modifier, _caller) do
-    case String.split(body, "|") do
-      [_just_one] ->
-        pairs = make_pairs(body, modifier, line)
-        {:%{}, line, pairs}
-      [old_map, new_body] ->
-        pairs = make_pairs(new_body, modifier, line)
-        {:%{}, line, [{:|, line, [handle_var(old_map, line), pairs]}]}
-      _ -> raise(ArgumentError, "too many | in #{body}")
-    end
-  end
-
-  @doc false
-  def resolve_module("__MODULE__", caller) do
-    {:__MODULE__, [], caller.module}
-  end
-  def resolve_module(struct_name, _caller) do
-    {:__aliases__, [], [String.to_atom(struct_name)]}
-  end
-
-  @doc false
-  def make_pairs(body, modifier, line) do
-    words = String.split(body, ",")
-            |> Enum.map(fn w ->
-              String.trim(w)
-              |> String.split(": ")
-            end)
-    keys = extract_keys_or_vars(words, :keys) |> fix_keys
-    variables = extract_keys_or_vars(words, :vars) |> handle_var(line)
-
-    ensure_valid_variable_names(keys)
-
-    case modifier do
-      ?a -> keys |> Enum.map(&String.to_atom/1) |> Enum.zip(variables)
-      ?s -> keys |> Enum.zip(variables)
-    end
-  end
-
-  @doc false
-  def fix_keys(list) when is_list(list), do: Enum.map(list, &fix_keys/1)
-  def fix_keys("_" <> name), do: name
-  def fix_keys("^" <> name), do: name
-  def fix_keys(name) do
-    String.replace_suffix(name, "()", "")
-  end
-
-  @doc false
-  def handle_var(list, line) when is_list(list), do: Enum.map(list, fn i -> handle_var(i, line) end)
-  def handle_var("^" <> name, line), do: {:^, [], [handle_var(name, line)]}
-  def handle_var(name, line) do
-    if String.ends_with?(name, "()") do
-      {name |> String.replace_suffix("()", "") |> String.to_atom, line, []}
+  def do_sigil_m(raw_string, modifier) do
+    with {:ok, struct_name, rest} <- get_struct(raw_string),
+         {:ok, old_map, rest} <- get_old_map(rest),
+         {:ok, keys_and_values} <- expand_variables(rest, modifier) do
+      final_string = "%#{struct_name}{#{old_map}#{keys_and_values}}"
+      Code.string_to_quoted!(final_string, file: __ENV__.file, line: __ENV__.line)
     else
-      name |> String.to_atom |> Macro.var(nil)
+      {:error, step, reason} ->
+        raise(ArgumentError, "ShorterMaps parse error in step: #{step}, reason: #{reason}")
     end
   end
 
   @doc false
-  # parses a list of key/var pairs and constructs a list containing just the
-  # keys or just the vars; e.g. [[a], [b, c]] => [a, b] (keys) or [a, c] (vars)
-  def extract_keys_or_vars(list, mode, acc \\ [])
-  def extract_keys_or_vars([], _mode, acc), do: Enum.reverse(acc)
-  def extract_keys_or_vars([[first]|rest], mode, acc) do
-    extract_keys_or_vars(rest, mode, [first|acc])
+  def get_struct("%" <> rest) do
+    [struct_name|others] = String.split(rest, " ")
+    body = Enum.join(others, " ")
+    {:ok, struct_name, body}
   end
-  def extract_keys_or_vars([[key, _var]|rest], :keys = mode, acc) do
-    extract_keys_or_vars(rest, mode, [key|acc])
+  def get_struct(no_struct), do: {:ok, "", no_struct}
+
+  @doc false
+  def get_old_map(string) do
+    cond do
+      string =~ ~r/\A\s*[a-zA-Z_]\w*\s*\|/ -> # make sure this is a map update pipe
+        [old_map|rest] = String.split(string, "|")
+        new_body = Enum.join(rest, "|")
+        {:ok, "#{old_map}|", new_body}
+      true ->
+        {:ok, "", string}
+
+    end
   end
-  def extract_keys_or_vars([[_key, var]|rest], :vars = mode, acc) do
-    extract_keys_or_vars(rest, mode, [var|acc])
+
+  @doc false
+  def expand_variables(string, modifier) do
+    result = string
+             |> String.split(",")
+             |> Enum.map(fn s ->
+               cond do
+                 s =~ ~r/\A\s*[_^]?[a-zA-Z_]\w*(\(\))?\s*\Z/ ->
+                   s
+                   |> String.trim
+                   |> process_var(modifier)
+                 true -> s
+               end
+             end)
+             |> Enum.join(",")
+     {:ok, result}
+  end
+
+  @doc false
+  def process_var(var, ?s) do
+    "\"#{fix_key(var)}\" => #{var}"
+  end
+  def process_var(var, ?a) do
+    "#{fix_key(var)}: #{var}"
+  end
+
+  @doc false
+  def fix_key("_" <> name), do: name
+  def fix_key("^" <> name), do: name
+  def fix_key(name) do
+    String.replace_suffix(name, "()", "")
   end
 
   @doc false
@@ -216,12 +145,4 @@ defmodule ShorterMaps do
     raise(ArgumentError, "only these modifiers are supported: s, a")
   end
 
-  @doc false
-  def ensure_valid_variable_names(keys) do
-    Enum.each keys, fn k ->
-      unless k =~ ~r/\A[a-zA-Z_]\w*\Z/ do
-        raise ArgumentError, "invalid variable name: #{inspect k}"
-      end
-    end
-  end
 end
