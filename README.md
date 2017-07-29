@@ -7,7 +7,7 @@
 1) Add `{:shorter_maps, "~> 2.0"},` to your mix deps
 2) Add `import ShorterMaps` to the top of your module
 3) DRY up your maps and structs with `~M` and `~m`. Instead of `%{name: name}`
-   use `~M{name}`, and for `%{"name" => name}` use `~M{name}`. When the key and
+   use `~M{name}`, and for `%{"name" => name}` use `~m{name}`. When the key and
    the variable don't match, don't fret: `~M{name, id: current_id}` expands
    to `%{name: name, id: current_id}`.
 
@@ -86,7 +86,7 @@ iex> import ShorterMaps
 # in pattern matches:
 ...> ~M{age, model} = %{age: -30, model: "Delorean", manufacturer: "AMC"}
 ...> age
--55
+-30
 
 ```
 
