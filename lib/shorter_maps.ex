@@ -78,6 +78,7 @@ defmodule ShorterMaps do
          {:ok, old_map, rest} <- get_old_map(rest),
          {:ok, keys_and_values} <- expand_variables(rest, modifier) do
       final_string = "%#{struct_name}{#{old_map}#{keys_and_values}}"
+      #IO.puts("#{raw_string} => #{final_string}") # For debugging expansions gone wrong.
       Code.string_to_quoted!(final_string, file: __ENV__.file, line: __ENV__.line)
     else
       {:error, step, reason} ->
@@ -86,6 +87,8 @@ defmodule ShorterMaps do
   end
 
   @doc false
+  # expecting something like: '%StructName key1, key2' -or- '%StructName oldmap|key1, key2'
+  # returns {:ok, old_map, keys_and_vars} | {:ok, "", keys_and_vars}
   def get_struct("%" <> rest) do
     [struct_name|others] = String.split(rest, " ")
     body = Enum.join(others, " ")
@@ -93,29 +96,39 @@ defmodule ShorterMaps do
   end
   def get_struct(no_struct), do: {:ok, "", no_struct}
 
+  @re_prefix "[_^]"
+  @re_varname ~S"[a-zA-Z_]\w*" # use ~S to get a real \
   @doc false
+  # expecting something like "old_map|key1, key2" -or- "key1, key2"
+  # returns {:ok, "#{old_map}|", keys_and_vars} | {:ok, "", keys_and_vars}
   def get_old_map(string) do
     cond do
-      string =~ ~r/\A\s*[a-zA-Z_]\w*\s*\|/ -> # make sure this is a map update pipe
+      string =~ ~r/\A\s*#{@re_varname}\s*\|/ -> # make sure this is a map update pipe
         [old_map|rest] = String.split(string, "|")
-        new_body = Enum.join(rest, "|")
+        new_body = Enum.join(rest, "|") # put back together unintentionally split things
         {:ok, "#{old_map}|", new_body}
       true ->
         {:ok, "", string}
-
     end
   end
 
   @doc false
+
+  # This works simply:  split the whole string on commas. check each entry to
+  # see if it looks like a variable (with or without prefix) or zero-arity
+  # function.  If it is, replace it with the expanded version.  Otherwise, leave
+  # it alone. Once all the pieces are processed, glue it back together with
+  # commas.
+
   def expand_variables(string, modifier) do
     result = string
              |> String.split(",")
              |> Enum.map(fn s ->
                cond do
-                 s =~ ~r/\A\s*[_^]?[a-zA-Z_]\w*(\(\))?\s*\Z/ ->
+                 s =~ ~r/\A\s*#{@re_prefix}?#{@re_varname}(\(\s*\))?\s*\Z/ ->
                    s
                    |> String.trim
-                   |> process_var(modifier)
+                   |> expand_variable(modifier)
                  true -> s
                end
              end)
@@ -124,10 +137,10 @@ defmodule ShorterMaps do
   end
 
   @doc false
-  def process_var(var, ?s) do
+  def expand_variable(var, ?s) do
     "\"#{fix_key(var)}\" => #{var}"
   end
-  def process_var(var, ?a) do
+  def expand_variable(var, ?a) do
     "#{fix_key(var)}: #{var}"
   end
 
