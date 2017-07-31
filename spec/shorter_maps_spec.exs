@@ -314,6 +314,22 @@ defmodule ShorterMapsSpec do
         b = "bleh"
         expect ~m{a, "b" => ~m(a, b)} |> to(eq(%{"a" => "blah", "b" => %{"a" => "blah", "b" => "bleh"}}))
       end
+
+      example "string interpolation" do
+        a = "blah"
+        b = "bleh"
+        c = 5
+        expect ~M(a, b: "#{b <> b}, c") |> to(eq(%{a: a, b: "blehbleh, c"}))
+      end
+
+
+    end
+
+    describe "regressions and bugfixes" do
+      example "of mixed-mode parse error" do
+        a = 5
+        expect ~M{key: [1, a, 2]} |> to(eq(%{key: [1, 5, 2]}))
+      end
     end
 
   end
