@@ -123,6 +123,7 @@ defmodule ShorterMaps do
   def expand_variables(string, modifier) do
     result = string
              |> String.split(",")
+             |> identify_entries()
              |> Enum.map(fn s ->
                cond do
                  s =~ ~r/\A\s*#{@re_prefix}?#{@re_varname}(\(\s*\))?\s*\Z/ ->
@@ -135,6 +136,41 @@ defmodule ShorterMaps do
              |> Enum.join(",")
      {:ok, result}
   end
+
+  @doc false
+  def identify_entries(candidates, partial \\ "", acc \\ [])
+  def identify_entries([], "", acc), do: acc |> Enum.reverse
+  def identify_entries([], remainder, _acc) do
+    # we failed, use code module to raise a syntax error:
+    Code.string_to_quoted!(remainder)
+  end
+  def identify_entries([h|t], partial, acc) do
+    entry = case partial do
+      "" -> h
+      _ -> partial <> "," <> h
+    end
+    if check_entry(entry, [:map, :list]) do
+      identify_entries(t, "", [entry|acc])
+    else
+      identify_entries(t, entry, acc)
+    end
+  end
+
+  @doc false
+  def check_entry(_entry, []), do: false
+  def check_entry(entry, [:map|rest]) do
+    case Code.string_to_quoted("%{#{entry}}") do
+      {:ok, _} -> true
+      {:error, _} -> check_entry(entry, rest)
+    end
+  end
+  def check_entry(entry, [:list|rest]) do
+    case Code.string_to_quoted("[#{entry}]") do
+      {:ok, _} -> true
+      {:error, _} -> check_entry(entry, rest)
+    end
+  end
+
 
   @doc false
   def expand_variable(var, ?s) do
