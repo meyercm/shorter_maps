@@ -1,5 +1,5 @@
 %{"earmark": {:hex, :earmark, "1.0.3", "89bdbaf2aca8bbb5c97d8b3b55c5dd0cff517ecc78d417e87f1d0982e514557b", [:mix], []},
-  "espec": {:hex, :espec, "1.2.2", "c54cead6b197e9bcf32406d43eaedb1675a2b35c5ccc63f1033782c8d616b4a2", [:mix], [{:meck, "~> 0.8.4", [hex: :meck, optional: false]}]},
+  "espec": {:hex, :espec, "1.4.2", "7dda1a2369ca597d5d28614b2dc69f1b19c67e76e01b2a74b04a462d832a6e1d", [:mix], [{:meck, "0.8.4", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_doc": {:hex, :ex_doc, "0.14.5", "c0433c8117e948404d93ca69411dd575ec6be39b47802e81ca8d91017a0cf83c", [:mix], [{:earmark, "~> 1.0", [hex: :earmark, optional: false]}]},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], []},
   "pavlov": {:hex, :pavlov, "0.2.3", "9072029af61301463a6e273e2829e9eab14bd1e7a5c381886d5166e6739e6fcf", [:mix], [{:meck, "~> 0.8.2", [hex: :meck, optional: false]}]}}
