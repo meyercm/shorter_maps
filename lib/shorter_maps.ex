@@ -28,8 +28,8 @@ defmodule ShorterMaps do
   """
   defmacro sigil_m(term, modifiers)
 
-  defmacro sigil_m({:<<>>, _line, [string]}, modifiers) do
-    do_sigil_m(string, modifier(modifiers, @default_modifier_m))
+  defmacro sigil_m({:<<>>, [line: line], [string]}, modifiers) do
+    do_sigil_m(string, line, modifier(modifiers, @default_modifier_m))
   end
 
   defmacro sigil_m({:<<>>, _, _}, _modifiers) do
@@ -62,8 +62,8 @@ defmodule ShorterMaps do
 
   """
   defmacro sigil_M(term, modifiers)
-  defmacro sigil_M({:<<>>, _line, [string]}, modifiers) do
-    do_sigil_m(string, modifier(modifiers, @default_modifier_M))
+  defmacro sigil_M({:<<>>, [line: line], [string]}, modifiers) do
+    do_sigil_m(string, line, modifier(modifiers, @default_modifier_M))
   end
   defmacro sigil_M({:<<>>, _, _}, _modifiers) do
     raise ArgumentError, "interpolation is not supported with the ~M sigil"
@@ -73,13 +73,13 @@ defmodule ShorterMaps do
   def do_sigil_m("%" <> _rest, ?s) do
     raise(ArgumentError, "structs can only consist of atom keys")
   end
-  def do_sigil_m(raw_string, modifier) do
+  def do_sigil_m(raw_string, line, modifier) do
     with {:ok, struct_name, rest} <- get_struct(raw_string),
          {:ok, old_map, rest} <- get_old_map(rest),
          {:ok, keys_and_values} <- expand_variables(rest, modifier) do
       final_string = "%#{struct_name}{#{old_map}#{keys_and_values}}"
       #IO.puts("#{raw_string} => #{final_string}") # For debugging expansions gone wrong.
-      Code.string_to_quoted!(final_string, file: __ENV__.file, line: __ENV__.line)
+      Code.string_to_quoted!(final_string, file: __ENV__.file, line: line)
     else
       {:error, step, reason} ->
         raise(ArgumentError, "ShorterMaps parse error in step: #{step}, reason: #{reason}")

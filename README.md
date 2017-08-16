@@ -2,6 +2,8 @@
 
 `~M` sigil for map shorthand. `~M{a} ~> %{a: a}`
 
+[![Build Status](https://travis-ci.org/meyercm/shorter_maps.svg?branch=master)](https://travis-ci.org/meyercm/shorter_maps)
+
 ### Getting started
 
 1) Add `{:shorter_maps, "~> 2.0"},` to your mix deps
