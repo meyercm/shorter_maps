@@ -318,7 +318,6 @@ defmodule ShorterMapsSpec do
       example "string interpolation" do
         a = "blah"
         b = "bleh"
-        c = 5
         expect ~M(a, b: "#{b <> b}, c") |> to(eq(%{a: a, b: "blehbleh, c"}))
       end
 
@@ -329,6 +328,34 @@ defmodule ShorterMapsSpec do
       example "of mixed-mode parse error" do
         a = 5
         expect ~M{key: [1, a, 2]} |> to(eq(%{key: [1, 5, 2]}))
+      end
+
+      example "of import shadowing" do
+        defmodule Test do
+          import ShorterMaps
+          def test do
+            get_struct(:a)
+            get_old_map(:a)
+            expand_variables(:a, :b)
+            expand_variable(:a, :b)
+            identify_entries(:a, :b, :c)
+            check_entry(:a, :b)
+            expand_variable(:a, :b)
+            fix_key(:a)
+            modifier(:a, :b)
+            do_sigil_m(:a, :b)
+          end
+          def get_struct(a), do: ~M{a}
+          def get_old_map(a), do: a
+          def expand_variables(a, b), do: {a, b}
+          def expand_variable(a, b), do: {a, b}
+          def identify_entries(a,b,c), do: {a, b, c}
+          def check_entry(a, b), do: {a, b}
+          def fix_key(a), do: a
+          def modifier(a, b), do: {a, b}
+          def do_sigil_m(a, b), do: {a, b}
+        end
+
       end
     end
 
