@@ -357,6 +357,15 @@ defmodule ShorterMapsSpec do
         end
 
       end
+
+      example "of varname variations" do
+        a? = 1
+        expect ~M{a?} |> to(eq %{a?: 1})
+        a5 = 2
+        expect ~M{a5} |> to(eq %{a5: 2})
+        a! = 3
+        expect ~M{a!} |> to(eq %{a!: 3})
+      end
     end
 
   end

@@ -97,7 +97,7 @@ defmodule ShorterMaps do
   defp get_struct(no_struct), do: {:ok, "", no_struct}
 
   @re_prefix "[_^]"
-  @re_varname ~S"[a-zA-Z_]\w*" # use ~S to get a real \
+  @re_varname ~S"[a-zA-Z0-9_]\w*[?!]?" # use ~S to get a real \
   @doc false
   # expecting something like "old_map|key1, key2" -or- "key1, key2"
   # returns {:ok, "#{old_map}|", keys_and_vars} | {:ok, "", keys_and_vars}
