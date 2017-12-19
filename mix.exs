@@ -1,4 +1,4 @@
-defmodule ShortMaps.Mixfile do
+defmodule ShorterMaps.Mixfile do
   use Mix.Project
 
   @version "2.2.4"
