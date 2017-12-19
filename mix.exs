@@ -1,7 +1,7 @@
 defmodule ShorterMaps.Mixfile do
   use Mix.Project
 
-  @version "2.2.4"
+  @version "2.2.5"
   @repo_url "https://github.com/meyercm/shorter_maps"
 
   def project do
