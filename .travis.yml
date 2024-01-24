@@ -1,5 +1,4 @@
-language:
-  elixir
+language: elixir
 
 matrix:
   include:
@@ -7,6 +6,8 @@ matrix:
       elixir: 1.4.5
     - otp_release: 20.0
       elixir: 1.5.0
+    - otp_release: 26.2.1
+      elixir: 1.16.0
 
 script:
-  - mix espec --trace
+  - mix test
